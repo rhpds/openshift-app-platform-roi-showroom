@@ -13,15 +13,15 @@ view_switcher:
 tabs:
   # OCP Console
   - name: OpenShift Console
-    url: 'https://console-openshift-console.${DOMAIN}'
+    url: 'https://console-openshift-console.${DOMAIN}/'
 
   # Argo CD Console
   - name: GitOps Console
-    url: 'https://openshift-gitops-server-openshift-gitops.${DOMAIN}'
+    url: 'https://openshift-gitops-server-openshift-gitops.${DOMAIN}/'
 
   # Argo CD Console
   - name: Sonarqube Console
-    url: 'https://sonarqube-sonarqube.${DOMAIN}/dashboard?id=parasol-insurance-user-{guid}'
+    url: 'https://sonarqube-sonarqube.${DOMAIN}/dashboard?id=parasol-insurance-user-{guid}/'
 
   # DevSpaces Console
   - name: Dev Spaces Console
