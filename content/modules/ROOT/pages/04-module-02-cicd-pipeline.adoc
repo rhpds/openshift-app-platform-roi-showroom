@@ -1,80 +1,169 @@
 = Module 2: Your First Feature
 include::partial$_attributes.adoc[]
 :imagesdir: ../assets/images
+:experimental:
 
 In this module you will launch a cloud development environment, make a code change with the help of an AI coding assistant, push your change, and watch it flow through the automated CI/CD pipeline.
 
 == Launch Dev Spaces
 
-. In the *OpenShift Console*, switch to the *Developer* perspective and make sure you are in the `{dev_ns}` namespace
+. In the *OpenShift Console*, make sure you are in the `{dev_ns}` namespace
 
-. Click *Topology* in the left sidebar
+. Click *Workloads > Topology* in the left sidebar
 
-. On the Parasol Insurance deployment, click the *Dev Spaces icon* (the icon that looks like a code editor, with the tooltip "Edit source code")
+. On the Parasol Insurance deployment, click the *Dev Spaces icon* (the bottom icon, with the tooltip "Edit source code")
 +
-This opens your cloud development environment using Red Hat OpenShift Dev Spaces. The workspace is defined by a `devfile.yaml` in the repository — it specifies the container image, tools, extensions, and runtime configuration.
+image:m2/topology-view.png[OpenShift Topology View]
++
+This launches OpenShift Dev Spaces, your cloud development environment. The workspace settings are defined by the platform administrator, and a `devfile.yaml` in the repository — it specifies the container image, tools, extensions, and runtime configuration.
 
-. When prompted, accept the GitLab OAuth authorization popups
-
-. If prompted to log in, enter your credentials:
+. You'll be prompted to log in. Click the *Log In using OpenShift* button. Enter your credentials, if prompted:
 +
 * *Username:* `{user}`
 * *Password:* `{password}`
+. Click the *Allow selected permissions* button.
++
+image:m2/oauth-permissions.png[OAuth Permissions Grant]
+. When asked "Do you trust the authors of this repository?", click *Continue*. You will be redirected to GitLab's OAuth page.
+. Finally, when asked "devspaces is requesting access to your account on GitLab Community Edition", click *Authorize devspaces*.
++
+[TIP]
+====
+You might be thinking "this is a lot of log in screens and permissions grants". This is a one time operation, and the reason for this is twofold:
 
+. OpenShift Dev Spaces uses OpenShift OAuth to start a workspace as a Pod on your behalf in OpenShift.
+. To access and perform read/write to your repositories in  GitLab, Dev Spaces uses OAuth.
+====
 . Wait for the workspace to start. This may take a minute or two on the first launch as the container image is pulled and the environment is configured.
++
+image:m2/devspaces-loading.png[Wait for Dev Spaces to start the Workspace]
+
+After the IDE has started, click *Trust Publishers & Install* to ensure the default extensions are installed.
+
+image:m2/devspaces-trust.png[Trust Extensions in Dev Spaces]
 
 == Explore the IDE
 
 Once the workspace loads, take a moment to look around:
 
-* *Explorer* (left sidebar): Shows the `parasol-insurance` project structure — a standard Quarkus application
+* *Explorer* (left sidebar): Shows the `parasol-insurance` project structure. Open `src/main/resources/application.properties` to view it in the editor.
 * *Extensions*: In the left sidebar, click the Extensions icon to see pre-installed extensions:
 ** *RHDA* (Red Hat Dependency Analytics) — scans your dependencies for known vulnerabilities
 ** *Roo* and *Continue* — AI coding assistants that can help you write and refactor code
++
+image:m2/devspaces-extensions.png[Dev Spaces Extension List]
++
+The extensions listed in your environment are curated and enabled by the platform administrator. The full set of VS Code extensions available in the public marketplace can be made available, but most organizations have processes in place to enable only a subset of trusted extensions.
+* *Source Control*: Also in the left sidebar, use this to see commit history, and changes staged for commit.
++
+image:m2/devspaces-git.png[Dev Spaces Source Control]
 
-== Start the Application in Dev Mode
+As you can see, this is a fully functional and extensible development environment based on VS Code.
 
-. In the top menu, click *Terminal > Run Task...*
+== Review the Devfile
 
-. Select *devfile > Start Dev Mode*
+We mentioned https://devfile.io/[devfiles] earlier. Devfile is a standard format for defining containerized development environments. Let's explore your environment's devfile.
+
+. In Dev Spaces, select the Explorer and click on the *devfile.yaml* file.
+. Take note of the `parent.uri` - this demonstrates that each repository can reference a parent devfile to inherit default configurations.
+. In the GitLab tab return to the *Projects* page, then click *Explore projects*
++
+image:m2/gitlab-explore.png[GitLab Projects]
+. Select the *parasol/devfiles* repository and view the parent devfile.
++
+image:m2/gitlab-devfiles.png[Devfiles in GitLab]
+
+Parasol has standardized on Quarkus as their primary application runtime. This devfile configures each workspace to enable nested containerization, Maven cache, and initialises an open-source coding assistant - more on this in the next section! 
+
+The nested containerization feature enables https://quarkus.io/guides/databases-dev-services[Quarkus Dev Services]. Dev Services are a feature that leverages container runtimes such as Podman or Docker in a development environment to provide services such as PostgreSQL and Kafka during development.
+
+== Try the Open-Source Continue AI Coding Assistant
+
+The platform team at Parasol has pre-configured their OpenShift Dev Spaces environment with credentials to access to a self-hosted Large Language Model (LLM). Additionally, they've configured the Continue extension to use that LLM to provide a coding assistant to their development teams that "just works" in their workspaces.
+
+. Select the *Continue* extension in the left sidebar.
+. Click the *LiteMaaS (Opus 4.6)* model dropdown. This is the only model available for now.
+. Enter the following prompt:
++
+[source,text,role=execute]
+----
+Explain the @application.properties file. I don't know much about Quarkus.
+----
++
+TIP: If you type the prompt yourself, you'll see that the `@` character triggers a dialog where you can select files and more.
+. The model will respond with a detailed description of the `application.properties`.
+
+image:m2/devspaces-continue-response.png[Continue extension responding to a prompt]
+
+Next, let's see the model edit files:
+
+. Enter the following prompt:
++
+[source,text,role=execute]
+----
+Add some helpful comments to the @application.properties file.
+----
+. Wait while the model makes changes and then click *Accept* to save the changes.
++
+image:m2/devspaces-continue-edits.png[Continue Code Changes in Dev Spaces]
+
+Developers can use agentic coding assistants to quickly gain insight into codebases they're not familiar with, and develop new features more quickly. Platform administrators can configure which extensions are available and pre-configure those extensions, as you've seen in this environment.
+
+== Start the Quarkus Application in Dev Mode
+
+. In the top-left menu click *Terminal > Run Task...*
++
+NOTE: Alternatively use the keyboard shortcut or kbd:[Ctrl] + kbd:[Shift] + kbd:[P] then type "run task", then select *Tasks: Run Task* and press kbd:[Enter]. On macOS use kbd:[Cmd] instead of kbd:[Ctrl]
+. Select *devfile > Start Dev Mode* from the *Run Task* menu
 +
 This starts Quarkus in development mode. Behind the scenes, Testcontainers spins up local Kafka and PostgreSQL instances so the full application runs inside your workspace.
 
 . Wait for the application to start. You will see log output in the terminal indicating the Quarkus application is ready.
-
-. When prompted, open the application preview in a new browser tab. Navigate to the *Inbox* page to confirm the application is running and displaying emails.
++
+image:m2/quarkus-dev-mode.png[Quarkus Dev Mode]
+. When prompted by a popup, click *Open in a New Tab*. Navigate to the *Inbox* page to confirm the application is running and displaying emails.
 +
 [NOTE]
 ====
-Curious about how nested containers work in Dev Spaces? Open a terminal and run `podman ps` to see the Kafka and PostgreSQL containers running alongside your application.
+Curious about how nested containers work in Dev Spaces? Open a new terminal (using the *+* icon above the Quarkus Dev Mode terminal) and run `podman ps` to see the Kafka and PostgreSQL containers running alongside your application.
 ====
+. If you missed the prompt to open the Quarkus application in a new tab, you can use the *Endpoints* section in OpenShift Dev Spaces to find the link.
++
+image:m2/devspaces-endpoints.png[Dev Spaces Endpoints]
 
-== Make a Code Change with Claude Code
+Dev Spaces provides a comprehensive local-like develpoment environment with Podman (or Docker) CLI, access popular runtimes (e.g JDK, Node.js, Python), and a full featured terminal. By default, Dev Spaces uses a https://catalog.redhat.com/en/software/containers/devspaces/udi-rhel9/673f8460bbf0c33aca0fe316[Universal Developer Image] that includes popular dev tools and libraries. Platform administrators can use alternative container images with curated tooling and specific versions if desired.
 
-Now you will use Claude Code, an AI coding assistant available in the terminal, to make a code change.
+== Implement and Commit and Feature with Continue
+
+Now you will use the Continue coding assistant, to make a code change.
+
+=== Make the Code Change
 
 The inbox currently displays timestamps in a UTC-like 24-hour format (e.g., `2026-04-20 14:30:00`). The product requirements call for a locale-friendly format with AM/PM (e.g., `Apr 20, 2026 02:30 PM`).
 
-. Open a new terminal in Dev Spaces (*Terminal > New Terminal*)
-
-. Type `claude` and press Enter to launch Claude Code
+. Select the *Continue* extension.
+. Click the plus icon at the top of the *Continue* panel to begin a new session.
 
 . Enter the following prompt:
 +
 [source,text]
 ----
-the inbox currently displays utc-like time, but the product requirements need a locale time with AM/PM - please implement this change
+The inbox currently displays utc-like time, but the product requirements need a locale time with AM/PM - please implement this change.
 ----
 
-. Claude Code will analyze the codebase, find the relevant code (the `DateTimeFormatter` pattern in `EmailRouter.java`), and propose changes. Review the suggested changes and accept them.
+. Continue will analyze the codebase, find the relevant code (most likely the `DateTimeFormatter` pattern in `EmailRouter.java` and ), and propose changes. Review the suggested changes and accept them.
++
+image:m2/devspaces-continue-time-format.png[Continue updating the time formatting code]
 
 . After accepting the changes, verify them in your running application:
 +
-* Switch to the browser tab with the Parasol app preview
-* Refresh the *Inbox* page
-* Confirm the timestamps now display in a locale-friendly format with AM/PM (e.g., `Apr 20, 2026 02:30 PM`)
+* Switch to the browser tab with the application preview
+* Refresh the *Inbox* page and wait for a new message to appear
+* Confirm the timestamps now display in a locale-friendly format with AM/PM (e.g., `2026-04-22 07:35:38 PM`)
 
-== Commit and Push
+image:m2/quarkus-app-am-pm.png[Quarkus ㅁpplication showing AM/PM in the inbox]
+
+=== Commit and Push
 
 . In the Dev Spaces left sidebar, click the *Source Control* icon (the branch icon)
 
@@ -82,26 +171,28 @@ the inbox currently displays utc-like time, but the product requirements need a 
 
 . Stage your changes by clicking the *+* icon next to each changed file (or click *+* next to *Changes* to stage all)
 
-. Enter a commit message, for example: `feat: display inbox timestamps in locale format with AM/PM`
-
-. Click the checkmark icon to commit
-
-. Push your changes by opening a terminal and running:
+. Enter a commit message, for example:
 +
 [source,bash,role=execute]
 ----
-git push
+feat: display inbox timestamps in locale format with AM/PM
 ----
+
+. Click the down arrow on the *Commit* button and click *Commit & Push*
++
+image:m2/devspaces-commit.png[Commit changes using the Source Control pane]
+. Click *Yes* in the confirmation dialog box that appears.
 
 == Watch the Pipeline
 
-Your `git push` triggered a webhook in GitLab, which started a new Tekton PipelineRun in your build namespace.
+=== Find the PipelineRun in OpenShift
 
-. Switch to the *OpenShift Console*
+Your `git push` triggered a webhook in GitLab, which started a new PipelineRun in your build namespace.
 
-. Navigate to the `{build_ns}` namespace
-
-. Switch to the *Developer* perspective and click *Pipelines* in the left sidebar
+. In the *OpenShift Console* tab, expand the left menu and select *Pipelines > Pipelines*
+. Choose the `{build_ns}` from the *Project* dropdown
++
+image:m2/openshift-build-push.png[PipelineRun trigerred by the Git Push is now progressing]
 
 . You should see a new PipelineRun in progress. Click on it to watch the stages:
 +
@@ -110,31 +201,34 @@ Your `git push` triggered a webhook in GitLab, which started a new Tekton Pipeli
 * *sonar-scan* — runs SonarQube static analysis
 * *build-and-push* — builds a new container image and pushes it to Quay
 * *rollout-restart* — triggers a rolling restart in the dev namespace
++
+image:m2/openshift-build-push-progress.png[Viewing the build tasks and progress]
 
-. Wait for the pipeline to complete. This typically takes 3-5 minutes.
+. While you wait for the pipeline to complete, proceed to the next step.
 
-== Check the SonarQube Report
+=== Check the SonarQube Report
 
 . In the PipelineRun details, click on the *sonar-scan* task
-
 . Expand the task logs and look for the line that reads:
 +
 ----
-SonarQube Report: <URL>
+SonarQube Report: https://sonarqube-sonarqube.{openshift_cluster_ingress_domain}/dashboard?id=parasol-insurance-{username}
 ----
-
-. Copy and open that URL in the *SonarQube* tab on the right side of this page to see the analysis report for your project. The report shows code quality metrics, potential issues, and test coverage information.
+. This URL is already pre-loaded in *SonarQube* tab on the right side of this page. Refresh it to see the analysis report for your project. The report shows code quality metrics, potential issues, and test coverage information.
++
+image:m2/sonarscan.png[The SonarQube report should pass and show all green]
+. Wait for the PipelineRun to finish.
 
 == Verify the Deployment
 
 . Switch to the `{dev_ns}` namespace in the *OpenShift Console*
-
-. In the *Developer* perspective, click *Topology*
-
-. Confirm the Parasol Insurance pod has rolled out with the new image (you may see a brief rolling deployment)
-
-. Click the route icon on the application to open it
-
+. Select *Workloads > Pods* from the left menu.
+. Confirm the Parasol Insurance application Pod has rolled out with the new image - it's age should be just a few minutes or seconds old.
++
+image:m2/openshift-new-pod.png[A new Parasol Insurance application Pod has been rolled out]
+. Select *Networking > Routes* and from the left menu and click on the URL in the *Location* column.
 . Navigate to the *Inbox* page and confirm the timestamps now display in the locale format with AM/PM
++
+image:m2/parasol-inbox-am-pm.png[Development version of Parasol Insurance showing AM/PM]
 
-Congratulations — you have made a code change with an AI coding assistant, pushed it through an automated CI/CD pipeline with quality gates, and verified the deployment. In the next module, you will enhance the application with LLM-powered email classification.
+Congratulations — you have made a code change with an AI coding assistant, pushed it through an automated CI/CD pipeline with quality gates, and verified the deployment in the development environment. In the next module, you will enhance the application with LLM-powered email classification.

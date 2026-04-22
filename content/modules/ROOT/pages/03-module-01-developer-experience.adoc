@@ -1,12 +1,28 @@
-= Module 1: Exploring the Platform
+= Module 1: Exploring the platform
 include::partial$_attributes.adoc[]
 :imagesdir: ../assets/images
 
-In this module you will log into OpenShift, explore the namespaces and applications that have been provisioned for you, and get familiar with the tools you will use throughout the lab.
+You have just joined the Parasol Insurance development team. Your manager has given you access to the company's OpenShift-based application platform and asked you to get up to speed on the tools and workflows. Before you start writing code, you need to understand what has been set up for you: your namespaces, the running application, the CI/CD pipeline, and where your source code lives.
 
-== Log into OpenShift
+In this module you will log into OpenShift, explore the environment that has been provisioned for you, and get familiar with the tools you will use throughout the lab.
 
-. Open the *OpenShift Console* using the tab on the right side of this page, or navigate to {console_url}
+== Learning objectives
+
+By the end of this module, you will be able to:
+
+* Navigate the OpenShift web console and switch between Administrator and Developer perspectives
+* Identify your build, dev, and prod namespaces and understand their purpose
+* Access the running Parasol Insurance application and observe its current behavior
+* Explain how ExternalSecrets sync credentials from Vault without manual management
+* Locate your CI/CD pipelines and understand their stages
+* Find your forked source code and deployment manifests in GitLab
+* Use Argo CD to observe and trigger GitOps-driven deployments
+
+== Exercise 1: Log into OpenShift and find your namespaces
+
+Your first task is to log into the OpenShift web console and verify that your environment is ready.
+
+. Open the *OpenShift Console* using the tab on the right side of this page, or navigate to {openshift_console_url}
 
 . Click *rhsso* as the login provider
 
@@ -15,47 +31,63 @@ In this module you will log into OpenShift, explore the namespaces and applicati
 * *Username:* `{user}`
 * *Password:* `{password}`
 
-== Accessing your Projects (Namespaces)
-
 . Navigate to *Home > Projects* in the *OpenShift Console*
 
 . You should see three projects:
 +
-* `{build_ns}` — where your CI/CD pipelines run
-* `{dev_ns}` — your development environment
-* `{prod_ns}` — your production environment
+* `{build_ns}` -- where your CI/CD pipelines run
+* `{dev_ns}` -- your development environment
+* `{prod_ns}` -- your production environment
 
 Your list should resemble the following screenshot:
 
-image:m1/user-namespaces.png[User namespaces as seen by a lab user]
+image::m1/user-namespaces.png[User namespaces as seen by a lab user,link=self,window=blank,width=700,title="Your three namespaces in the OpenShift console"]
 
-Your access is governed by a custom `tenant-user` ClusterRole, i.e https://kubernetes.io/docs/reference/access-authn-authz/rbac/[Kubernetes RBAC]. This gives you admin-like permissions in your namespaces with one important restriction: you cannot view Secrets nor read their values. This is by design — secrets like database credentials, LLM API keys, and Kafka connection strings are managed and made available by the platform team through ExternalSecrets and stored HashiCorp Vault.
+Your access is governed by a custom `tenant-user` ClusterRole, i.e link:https://kubernetes.io/docs/reference/access-authn-authz/rbac/[Kubernetes RBAC^]. This gives you admin-like permissions in your namespaces with one important restriction: you cannot view Secrets nor read their values. This is by design. Secrets like database credentials, LLM API keys, and Kafka connection strings are managed and made available by the platform team through ExternalSecrets and stored in HashiCorp Vault.
 
-NOTE: You're using a set of user-specific namespaces created for this lab experience. In reality, an application like Parasol Insurance would have namespaces similar to `parasol-build`, `parasol-dev`, and `parasol-prod` that multiple developers can view.
+[NOTE]
+====
+You're using a set of user-specific namespaces created for this lab experience. In reality, an application like Parasol Insurance would have namespaces similar to `parasol-build`, `parasol-dev`, and `parasol-prod` that multiple developers can view.
+====
 
-== Explore the Dev Environment
+=== Verify
+
+Confirm the following before moving on:
+
+* You are logged into the OpenShift web console
+* You can see all three projects: `{build_ns}`, `{dev_ns}`, and `{prod_ns}`
+
+== Exercise 2: Explore the running application
+
+The Parasol Insurance application is already deployed in your dev namespace. Let's take a look at what it does today.
 
 . Click on the `{dev_ns}` project to open it
 
 . Switch to the *Topology* view using the *Workloads > Topology* link on the left
 +
-image:m1/topology-dev.png[Topology view for the dev namespace]
+image::m1/topology-dev.png[Topology view for the dev namespace,link=self,window=blank,width=700,title="Topology view of the dev namespace"]
 
 . Click the small *route icon* (the arrow in the top-right corner of the *parasol-insurance* application circle) to open the Parasol Insurance application in a new tab
 
 . In the Parasol application, navigate to the *Inbox* page
 +
-image:m1/parasol-inbox.png[The Parasol Insurance application's Inbox page]
+image::m1/parasol-inbox.png[The Parasol Insurance application's Inbox page,link=self,window=blank,width=700,title="Parasol Insurance inbox with keyword-based classification"]
 
-. Observe the emails in the inbox. Notice that some emails are classified as *REVIEW REQUIRED*. This is because the current implementation uses simple keyword matching — any email the keywords cannot confidently classify gets flagged for manual review. You will fix this in Module 3.
+. Observe the emails in the inbox. Notice that some emails are classified as *REVIEW REQUIRED*. This is because the current implementation uses simple keyword matching. Any email the keywords cannot confidently classify gets flagged for manual review. You will fix this in Module 3.
 
-Nice work so far! You've accessed the OpenShift Console, found the Topology view, and learned how to access an application's public endpoint. OpenShift provides a https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/ingress_and_load_balancing/routes[Route resource] to define and manage public endpoints.
+You've accessed the OpenShift Console, found the Topology view, and learned how to access an application's public endpoint. OpenShift provides a link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/ingress_and_load_balancing/routes[Route resource^] to define and manage public endpoints.
 
-== Viewing Secrets (ExternalSecrets)
+=== Verify
 
-The Parasol Insurance application connects to Apache Kafka and consumes messages from a `email` Topic to perform routing to specific departments - this requires credentials to connect to the Kafka cluster. As mentioned earlier, the platform team at Parasol have standardized on HashiCorp Vault for secret management. The ExternalSecrets Operator is used to connect to the Vault instance and distribute those secrets to applications.
+Confirm the following:
 
-Let's view the ExternalSecrets:
+* The Topology view shows the Parasol Insurance application components in the `{dev_ns}` namespace
+* You can open the Parasol Insurance application via the route icon
+* The Inbox page displays emails, and some are flagged as *REVIEW REQUIRED*
+
+== Exercise 3: Examine ExternalSecrets
+
+The Parasol Insurance application connects to Apache Kafka and consumes messages from an `email` Topic to perform routing to specific departments. This requires credentials to connect to the Kafka cluster. The platform team at Parasol has standardized on HashiCorp Vault for secret management. The link:https://external-secrets.io/[ExternalSecrets Operator^] connects to the Vault instance and distributes those secrets to applications.
 
 . Navigate to *Home > Search*
 
@@ -65,46 +97,67 @@ Let's view the ExternalSecrets:
 
 . You should see two ExternalSecrets:
 +
-* `litellm-credentials` — LLM API endpoint and key, synced from Vault
-* `kafka-credentials` — Kafka connection details, synced from Vault
+* `litellm-credentials` -- LLM API endpoint and key, synced from Vault
+* `kafka-credentials` -- Kafka connection details, synced from Vault
 
-image:m1/external-secret-list-dev.png[The ExternalSecrets for Parasol Insurance's dev namespace]
+image::m1/external-secret-list-dev.png[The ExternalSecrets for Parasol Insurance's dev namespace,link=self,window=blank,width=700,title="ExternalSecrets in the dev namespace"]
 
 These ExternalSecrets automatically create Kubernetes Secrets in your namespace by pulling values from HashiCorp Vault. The platform team configured this so that sensitive credentials never need to be committed to source code or manually managed.
 
-Try clicking on one of the ExternalSecrets and note the *Status* showing it is synced. This means that the `kafka-credentials` Secret requested by the ExternalSecret of the same name will be available for the Parasol Insurance application to consume and use to connect to the Apache Kafka cluster.
+. Click on one of the ExternalSecrets and note the *Status* showing it is synced. This means that the `kafka-credentials` Secret requested by the ExternalSecret of the same name will be available for the Parasol Insurance application to consume and use to connect to the Apache Kafka cluster.
 
-NOTE: If you're wondering how these resources are created, how they're managed, and where they come from, that will be answered soon. Right now, we're just taking a tour and getting familiar with OpenShift and the application you'll work on during this lab.
+[NOTE]
+====
+If you're wondering how these resources are created, how they're managed, and where they come from, that will be answered soon. Right now, we're just taking a tour and getting familiar with OpenShift and the application you'll work on during this lab.
+====
 
-== Explore the Build Environment
+=== Verify
+
+Confirm the following:
+
+* Two ExternalSecrets are visible in the `{dev_ns}` namespace: `litellm-credentials` and `kafka-credentials`
+* The Status of each ExternalSecret shows it is synced
+
+== Exercise 4: Review the CI/CD pipelines
+
+Your build namespace contains Tekton pipelines that build, test, scan, and deploy your application. An initial pipeline run has already completed to pre-build your application image.
 
 . Switch to the `{build_ns}` namespace using the project dropdown at the top
 
 . Click *Pipelines > Pipelines* in the left sidebar. You should see `push` and `tag-promote` pipelines.
 +
-image:m1/pipelines-build.png[OpenShift Pipelines View]
+image::m1/pipelines-build.png[OpenShift Pipelines View,link=self,window=blank,width=700,title="Tekton pipelines in the build namespace"]
 
-. A `push` https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.21/html/about_openshift_pipelines/understanding-openshift-pipelines#about-pipelinerun_understanding-openshift-pipelines[PipelineRun] that has already completed — this was triggered automatically when your environment was provisioned to pre-build and pre-deploy the Parasol Insurance application. You viewed this in the `dev` environment earlier.
+. A `push` link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.21/html/about_openshift_pipelines/understanding-openshift-pipelines#about-pipelinerun_understanding-openshift-pipelines[PipelineRun^] has already completed. This was triggered automatically when your environment was provisioned to pre-build and pre-deploy the Parasol Insurance application. You viewed this in the `dev` environment earlier.
 
-. Click on the link in the *Last run* column to view the PipelineRun to see its details. 
+. Click on the link in the *Last run* column to view the PipelineRun details.
 +
-image:m1/pipeline-run-push.png[Completed Push PipelineRun]
-. Examine pipeline stages, known as https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.21/html/about_openshift_pipelines/understanding-openshift-pipelines#about-tasks_understanding-openshift-pipelines[Tasks]:
+image::m1/pipeline-run-push.png[Completed Push PipelineRun,link=self,window=blank,width=700,title="Completed push PipelineRun with all stages passed"]
+
+. Examine the pipeline stages, known as link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.21/html/about_openshift_pipelines/understanding-openshift-pipelines#about-tasks_understanding-openshift-pipelines[Tasks^]:
 +
-* *clone* — clones your source code from GitLab
-* *maven-build* — compiles the Quarkus application and runs tests
-* *sonar-scan* — runs SonarQube static analysis for code quality
-* *build-and-push* — builds the container image and pushes it to Quay
-* *rollout-restart* — triggers a rolling restart of the deployment in the dev namespace
+* *clone* -- clones your source code from GitLab
+* *maven-build* -- compiles the Quarkus application and runs tests
+* *sonar-scan* -- runs SonarQube static analysis for code quality
+* *build-and-push* -- builds the container image and pushes it to Quay
+* *rollout-restart* -- triggers a rolling restart of the deployment in the dev namespace
 
-At this point you've observed that OpenShift provides multiple application-platform capabilities, including the ability to run CI/CD natively on the platform itself. 
+At this point you've observed that OpenShift provides multiple application-platform capabilities, including the ability to run CI/CD natively on the platform itself.
 
-As an optional exercise, return to the *Home > Search* page and view the ExternalSecrets defined in your *{build_ns}* namespace - you'll notice that multiple Secrets that are required to securely access code, push/pull images, and interact with SonarQube are defined. Platform adminstrators can rotate these
-credentials in Vault at any time, and the ExternalSecrets will automatically synchronise and make sure the latest values are available to your application's and CI/CD pipelines.
+As an optional exercise, return to the *Home > Search* page and view the ExternalSecrets defined in your `{build_ns}` namespace. You'll notice that multiple Secrets required to securely access code, push/pull images, and interact with SonarQube are defined. Platform administrators can rotate these credentials in Vault at any time, and the ExternalSecrets will automatically synchronize and make sure the latest values are available to your applications and CI/CD pipelines.
 
-== Your Source Code in GitLab
+=== Verify
 
-Finally! It's time to view application source code and manifests in GitLab.
+Confirm the following:
+
+* Two pipelines are visible in the `{build_ns}` namespace: `push` and `tag-promote`
+* A completed PipelineRun is visible for the `push` pipeline
+* You can click into the PipelineRun and see five stages: clone, maven-build, sonar-scan, build-and-push, rollout-restart
+* All stages show a successful (green) status
+
+== Exercise 5: Find your source code in GitLab
+
+Your source code is hosted in GitLab. Each lab participant gets their own fork of the Parasol Insurance repositories.
 
 . Open the *GitLab* tab on the right side of this page, or navigate to {gitlab_url}
 
@@ -115,90 +168,155 @@ Finally! It's time to view application source code and manifests in GitLab.
 
 . After logging in, you should see two repositories forked into your *Projects* list:
 +
-* *parasol-insurance* — the Parasol Insurance application's Quarkus source code)
-* *parasol-insurance-manifests* — the build and deployment manifests (Helm Charts) with Kubernetes CRs that are deployed and managed by OpenShift Gitops
+* *parasol-insurance* -- the Parasol Insurance application's Quarkus source code
+* *parasol-insurance-manifests* -- the build and deployment manifests (Helm Charts) with Kubernetes CRs that are deployed and managed by OpenShift GitOps
 
-Take a look at the manifests first. These define the build and deployment environments, using an Infrastructure as Code (IaC) approach:
+=== Review the deployment manifests
+
+Take a look at the manifests first. These define the build and deployment environments, using an Infrastructure as Code (IaC) approach.
 
 . Click the *parasol-insurance-manifests* repository. A directory listing is shown.
+
 . Open the `app/templates/` folder. Here you can see the ExternalSecrets (YAML files with `es-` prefix) and other CRs.
 +
-image:m1/gitlab-manifests.png[GitLab Parasol Manifests]
-. Click the `deployment.yaml` and locate the `DEV_KAFKA_PASSWORD`. Notice that it references `kafka-credentials` defined by the ExternalSecret?
+image::m1/gitlab-manifests.png[GitLab Parasol Manifests,link=self,window=blank,width=700,title="Deployment manifests in GitLab"]
 
-The manifests are deployed to your namespaces on OpenShift using OpenShift GitOps - you'll see this in-depth later.
+. Click `deployment.yaml` and locate the `DEV_KAFKA_PASSWORD`. Notice that it references `kafka-credentials` defined by the ExternalSecret.
 
-Next, explore the Quarkus source code:
+The manifests are deployed to your namespaces on OpenShift using OpenShift GitOps. You'll see this in-depth in the next exercise.
+
+=== Review the application source code
 
 . Click the GitLab icon in the top-left of the GitLab UI to return to your *Projects* list.
+
 . Click into the *parasol-insurance* repository and explore the project structure. This is a standard Quarkus application with `src/main/java` for source code and `src/main/resources` for configuration.
-. Open `src/main/resources/application.properties` and take note of the `DEV_KAFKA_PASSWORD` environment variable. Recall that this is defined by the `deployment.yaml` https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[Deployment] that reads the `es-kafka.yaml` ExternalSecret? At no point is the value of the credential stored in plaintext.
-. Also, you'll notice `mp.messaging.incoming.emails-in.topic` in `application.properties` defines the Kafka Topic that the application consumes emails from.
+
+. Open `src/main/resources/application.properties` and take note of the `DEV_KAFKA_PASSWORD` environment variable. Recall that this is defined by the `deployment.yaml` link:https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[Deployment^] that reads the `es-kafka.yaml` ExternalSecret. At no point is the value of the credential stored in plaintext.
+
+. You'll also notice `mp.messaging.incoming.emails-in.topic` in `application.properties` defines the Kafka Topic that the application consumes emails from.
 +
-image:m1/parasol-application-properties.png[Parasol Insurance application.properties file in GitLab]
+image::m1/parasol-application-properties.png[Parasol Insurance application.properties file in GitLab,link=self,window=blank,width=700,title="Application properties showing Kafka and credential configuration"]
+
 . Take a look at the code in `src/main/java/com/parasol/EmailRouter.java` and you'll see the `consume` method references the `emails-in` message channel that was defined in `application.properties`.
 
-Now you know how the application source code, and build and deployment manifests come together to form a complete application deployment on OpenShift. This application is designed with the https://12factor.net/[Twelve-Factor principles] in mind.
+Now you know how the application source code, and build and deployment manifests come together to form a complete application deployment on OpenShift. This application is designed with the link:https://12factor.net/[Twelve-Factor principles^] in mind.
 
-== Explore OpenShift GitOps
+=== Verify
 
-The manifests you explored in the {gitlab_url}/{username}/parasol-insurance-manifests[parasol-insurance-manifests] repository are used to manage all aspects of the application build and deployment on OpenShift via OpenShift GitOps (Argo CD). Essentially, OpenShift GitOps watches your manifest repository for changes, and continuously reconciles the state of the manifests on the cluster with those in the repository. This prevents configuration drift and ensures applications are in a known state.
+Confirm the following:
 
-=== View your Applications
+* You can log into GitLab with your credentials
+* Two repositories are visible in your GitLab namespace: `parasol-insurance` and `parasol-insurance-manifests`
+* The `deployment.yaml` in the manifests repo references the `kafka-credentials` ExternalSecret
+* The `application.properties` in the source repo references the same credential via environment variables
 
-Argo CD uses https://argo-cd.readthedocs.io/en/latest/user-guide/application-specification/[Application CRs] to manage manifests on your OpenShift cluster.
+== Exercise 6: Explore OpenShift GitOps
+
+The manifests you explored in the parasol-insurance-manifests repository are used to manage all aspects of the application build and deployment on OpenShift via OpenShift GitOps (Argo CD). Argo CD watches your manifest repository for changes and continuously reconciles the state of the manifests on the cluster with those in the repository. This prevents configuration drift and ensures applications are in a known state.
+
+=== View your applications
+
+Argo CD uses link:https://argo-cd.readthedocs.io/en/latest/user-guide/application-specification/[Application CRs^] to manage manifests on your OpenShift cluster.
 
 . Use the Argo CD tab, or visit the {argocd_url}[Argo CD UI] in a new tab.
 +
-IMPORTANT: Do not click the *Log in via OpenShift* button. 
-. Enter your username and password to login: 
+[IMPORTANT]
+====
+Do not click the *Log in via OpenShift* button.
+====
+
+. Enter your username and password to login:
 +
 * *Username:* `{user}`
 * *Password:* `{password}`
+
 . You should see three Application tiles displayed. These represent your build, development, and production environments.
-+ 
-image:m1/argocd-apps.png[User Argo CD Application]
++
+image::m1/argocd-apps.png[User Argo CD Applications,link=self,window=blank,width=700,title="Your three Argo CD Applications"]
 
-Enabling 
+These applications were created for you when your lab environment was provisioned. Each one corresponds to one of your three namespaces.
 
-=== Update a Manifest in GitLab
+=== Update a manifest in GitLab
 
-These applications were created for you when your lab environment was provisioned. Each of these correspond to one of your three your namespaces. Let's see GitOps in action:
+Let's see GitOps in action by making a small change to a manifest and watching Argo CD reconcile it.
 
-. Return to {gitlab_url}/{username}/parasol-insurance-manifests[parasol-insurance-manifests] in GitLab.
+. Return to your parasol-insurance-manifests repository in GitLab.
+
 . Open the `app/templates/deployment.yaml` and select *Edit > Edit single file*.
+
 . In the `metadata.labels` section, add the following label:
 +
-[source,text,role=execute,subs=attributes+]
+[source,yaml,role=execute]
 ----
 app.openshift.io/runtime: quarkus
 ----
+
 . Scroll down. Enter a commit message:
 +
-[source,text,role=execute,subs=attributes+]
+[source,text,role=execute]
 ----
 fix: show the quarkus icon in the openshift topology view
 ----
+
 . The result will be similar to the following image:
 +
-image:m1/gitlab-update-manifest.png[GitLab Deployment Manifest Update]
+image::m1/gitlab-update-manifest.png[GitLab Deployment Manifest Update,link=self,window=blank,width=700,title="Adding a label to the deployment manifest in GitLab"]
+
 . Click *Commit changes*.
 
-=== Synchronize the Application in Argo CD
+=== Synchronize the application in Argo CD
 
-. Return to the `{username}-dev` Application in Argo CD, and click *Refresh*.
+. Return to the `{user}-dev` Application in Argo CD, and click *Refresh*.
 +
-NOTE: Clicking *Refresh* is not strictly required. Argo CD polls for changes every 3 minutes by default, and webhooks can be used to eliminate polling entirely.
+[NOTE]
+====
+Clicking *Refresh* is not strictly required. Argo CD polls for changes every 3 minutes by default, and webhooks can be used to eliminate polling entirely.
+====
+
 . Once the refresh completes, you'll briefly see an *OutOfSync* message.
 +
-image:m1/argocd-out-of-sync.png[Argo CD OutOfSync]
+image::m1/argocd-out-of-sync.png[Argo CD OutOfSync,link=self,window=blank,width=700,title="Argo CD detecting an out-of-sync state"]
+
 . The *OutOfSync* status will quickly change to *Syncing* since auto-sync is enabled.
+
 . Wait for the application to report *Synced*.
 
-Return to the *Workloads > Topolgy* view in the OpenShift Console. Make sure the *{dev_ns}* Project is selected. You should see that the Quarkus icon is now displayed on the Parasol Insurance deployment.
+Return to the *Workloads > Topology* view in the OpenShift Console. Make sure the `{dev_ns}` Project is selected. You should see that the Quarkus icon is now displayed on the Parasol Insurance deployment.
 
-image:m1/topology-dev-updated.png[Updated Topology View]
+image::m1/topology-dev-updated.png[Updated Topology View,link=self,window=blank,width=700,title="Topology view with the Quarkus icon after GitOps sync"]
 
-== What's Next
+=== Verify
 
-You have explored the platform: your namespaces, the running application, the pipeline, ExternalSecrets, and your source code. In the next module you will make a code change to Parasol Insurance using OpenShift Dev Spaces and an AI coding assistant, and watch it flow through the automated CI/CD pipeline.
+Confirm the following:
+
+* You can log into Argo CD and see three Applications (build, dev, prod)
+* After committing the label change in GitLab, Argo CD detects the change and syncs
+* The Topology view in OpenShift now shows the Quarkus icon on the Parasol Insurance deployment
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* How OpenShift organizes workloads into namespaces with role-based access control
+* How the `tenant-user` role provides developer access while keeping secrets protected
+* How ExternalSecrets and Vault automate credential management without developer intervention
+* How Tekton pipelines can enforce a consistent build, test, scan, and deploy workflow
+* How application source code and deployment manifests work together following Twelve-Factor principles
+* How Argo CD continuously reconciles cluster state with Git, preventing configuration drift
+
+== Module summary
+
+You have explored the platform and familiarized yourself with the tools you will use throughout this lab.
+
+*What you accomplished:*
+
+* Logged into OpenShift and identified your build, dev, and prod namespaces
+* Opened the running Parasol Insurance application and observed the keyword-based email classification
+* Examined ExternalSecrets that sync credentials from Vault
+* Reviewed the CI/CD pipelines and a completed PipelineRun with five stages
+* Traced how credentials flow from Vault through ExternalSecrets into application configuration
+* Made a manifest change in GitLab and watched Argo CD reconcile it to the cluster
+
+*Next steps:*
+
+In xref:04-module-02-cicd-pipeline.adoc[Module 2] you will launch a cloud development environment, make a code change with an AI coding assistant, and watch it flow through the automated CI/CD pipeline.
