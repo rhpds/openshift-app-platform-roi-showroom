@@ -1,363 +1,322 @@
-= Module 1: Developer experience (dev inner loop)
+= Module 1: Exploring the platform
 include::partial$_attributes.adoc[]
 :imagesdir: ../assets/images
 
-*Presenter note*: This module sets the scene with application modernization context, then follows a new developer joining Parasol who opens the app in DevSpaces and adds a feature using Quarkus dev mode. The developer intentionally does not add a unit test, which sets up the pipeline failure in Module 2. The module closes with a platform engineer perspective on managing DevSpaces environments. Target duration: 15 minutes across 4 parts.
+You have just joined the Parasol Insurance development team. Your manager has given you access to the company's OpenShift-based application platform and asked you to get up to speed on the tools and workflows. Before you start writing code, you need to understand what has been set up for you: your namespaces, the running application, the CI/CD pipeline, and where your source code lives.
 
-[#part-1]
-== Part 1 — Setting the scene: Application modernization
+In this module you will log into OpenShift, explore the environment that has been provisioned for you, and get familiar with the tools you will use throughout the lab.
 
-=== Know
+== Learning objectives
 
-_Before Parasol Insurance could modernize their development practices, they first had to modernize their application. Their core insurance platform was a monolithic Java EE application running on a traditional application server. The Migration Toolkit for Applications (MTA) helped them analyze, plan, and execute the migration to Quarkus on OpenShift._
+By the end of this module, you will be able to:
 
-**Business challenge:**
+* Navigate the OpenShift web console and switch between Administrator and Developer perspectives
+* Identify your build, dev, and prod namespaces and understand their purpose
+* Access the running Parasol Insurance application and observe its current behavior
+* Explain how ExternalSecrets sync credentials from Vault without manual management
+* Locate your CI/CD pipelines and understand their stages
+* Find your forked source code and deployment manifests in GitLab
+* Use Argo CD to observe and trigger GitOps-driven deployments
 
-* Legacy Java EE monolith is expensive to maintain and difficult to extend with new features
-* Traditional application server licensing costs are increasing year over year
-* The monolith cannot take advantage of cloud native capabilities like auto-scaling and containerization
-* New developers need deep knowledge of legacy APIs and patterns before they can contribute
+== Exercise 1: Log into OpenShift and find your namespaces
 
-**Current state at Parasol:**
+Your first task is to log into the OpenShift web console and verify that your environment is ready.
 
-* The core insurance platform has been running on a traditional Java EE application server for over a decade
-* Feature releases take months due to the complexity of the monolithic codebase
-* Only a handful of senior developers understand the full application architecture
-* The application cannot run in containers without significant rework
+. Open the *OpenShift Console* using the tab on the right side of this page, or navigate to {openshift_console_url}
 
-**Value proposition:**
+. Click *rhsso* as the login provider
 
-The Migration Toolkit for Applications (MTA) provides automated analysis of existing applications, identifying migration issues, estimating effort, and providing guided remediation steps. For Parasol, MTA analyzed their Java EE application and provided a clear path to modernize to Quarkus, a cloud native Java framework optimized for OpenShift. This migration is the foundation for everything we demonstrate in this demo: without a modernized, cloud native application, the developer experience improvements, automated pipelines, and platform operations capabilities would not be possible.
+. Enter your credentials:
++
+* *Username:* `{user}`
+* *Password:* `{password}`
 
-=== Show
+. Navigate to *Home > Projects* in the *OpenShift Console*
+
+. You should see 3 projects:
++
+* `{build_ns}` -- where your CI/CD pipelines run
+* `{dev_ns}` -- your development environment
+* `{prod_ns}` -- your production environment
+
+Your list should resemble the following screenshot:
+
+image::m1/user-namespaces.png[User namespaces as seen by a lab user,link=self,window=blank,width=700,title="Your three namespaces in the OpenShift console"]
+
+Your access is governed by a custom `tenant-user` ClusterRole, i.e link:https://kubernetes.io/docs/reference/access-authn-authz/rbac/[Kubernetes RBAC^]. This gives you admin-like permissions in your namespaces with one important restriction: you cannot view Secrets nor read their values. This is by design. Secrets like database credentials, LLM API keys, and Kafka connection strings are managed and made available by the platform team through ExternalSecrets and stored in HashiCorp Vault.
 
 [NOTE]
 ====
-**Presenter note:** This section is a talk track only. There is no live demo for the MTA migration. The application has already been migrated. Use the talking points below to set the context for the audience.
+You're using a set of user-specific namespaces created for this lab experience. In reality, an application like Parasol Insurance would have namespaces similar to `parasol-build`, `parasol-dev`, and `parasol-prod` that multiple developers can view.
 ====
 
-**What I say:**
+=== Verify
 
-"Before we dive into the developer experience, let me set the stage. Parasol Insurance had a challenge that many of you probably recognize: a core business application built on legacy Java EE, running on a traditional application server. It worked, but it was expensive to maintain, slow to update, and could not take advantage of modern cloud native capabilities.
+Confirm the following before moving on:
 
-Parasol used the Migration Toolkit for Applications, or MTA, which is included with their OpenShift subscription, to analyze their application. MTA scanned the codebase and identified every Java EE API, every proprietary dependency, and every pattern that needed to change. It generated a detailed migration report with specific remediation steps, categorized by effort level.
+* You are logged into the OpenShift web console
+* You can see all three projects: `{build_ns}`, `{dev_ns}`, and `{prod_ns}`
 
-The key insight from MTA's analysis was that Parasol's application was a strong candidate for migration to Quarkus, Red Hat's cloud native Java framework. Quarkus is designed from the ground up for OpenShift and Kubernetes: fast startup times, low memory footprint, and a developer experience built around live reload and continuous testing.
+== Exercise 2: Explore the running application
 
-Parasol completed this migration, and the application you are about to see running in this demo is the result. It is a modern Quarkus application, containerized, running on OpenShift, and ready to take advantage of every platform capability we are going to show you.
+The Parasol Insurance application is already deployed in your dev namespace. Let's take a look at what it does today.
 
-The important thing to understand is that this modernization step is the foundation. Without it, none of the developer experience improvements, automated pipelines, or platform operations capabilities we are about to demonstrate would be possible. MTA made that transition practical and de-risked."
+. Click on the `{dev_ns}` project to open it
 
-**Business value callout:**
-
-"Application modernization is often the first and most critical step in an enterprise platform transformation. MTA reduces the risk and effort of migration by providing automated analysis and guided remediation. For Parasol, this unlocked the ability to adopt cloud native development practices, automated CI/CD, and platform-managed operations, all of which we will see in this demo."
-
-**If asked:**
-
-Q: "How long did the migration take?"::
-A: "Migration timelines vary based on application complexity. MTA categorizes issues by effort level, so teams can plan iteratively. Many organizations start with the highest-value, lowest-effort migrations and build momentum. MTA also supports analyzing Spring Boot applications for migration to Quarkus, as well as migrations between OpenShift versions."
-
-Q: "Can you show us MTA?"::
-A: "MTA is available as part of the OpenShift platform. In this demo we focus on the results of the migration, the modernized Quarkus application, and what it enables. For a detailed MTA walkthrough, there are dedicated MTA demos and workshops available."
-
-Q: "Does MTA handle all types of migrations?"::
-A: "MTA supports a wide range of migration paths: Java EE to Quarkus, Spring Boot to Quarkus, WebLogic to JBoss EAP, and migrations between OpenShift versions. It also supports cloud-to-cloud migrations. The analysis rules are extensible, so teams can add custom rules for proprietary frameworks."
-
-Q: "What about the database and other dependencies?"::
-A: "MTA focuses on the application code and configuration. Database migrations, schema changes, and infrastructure dependencies are handled separately, though MTA's analysis identifies those dependencies so teams can plan accordingly."
-
-'''
-
-[#part-2]
-== Part 2 — Standardized development with DevSpaces
-
-=== Know
-
-_With the Parasol application modernized to Quarkus, new developers still face a common challenge: setting up their development environment. Dependencies conflict, IDE configurations differ across teams, and "works on my machine" remains a constant source of friction. Red Hat OpenShift Dev Spaces eliminates this entirely._
-
-**Business challenge:**
-
-* New developer onboarding takes 1-2 weeks before the first line of code is written
-* Local environment inconsistencies cause integration failures and rework
-* Developers maintain their own tooling, creating security blind spots and configuration drift
-* Teams waste hours each sprint troubleshooting environment-specific issues
-
-**Current state at Parasol:**
-
-* 200+ developers each maintaining unique local configurations
-* 15-20 hours per developer per quarter lost to environment troubleshooting
-* No standardization across teams for IDE versions, SDK versions, or code formatting rules
-* Security team has no visibility into developer workstations
-
-**Value proposition:**
-
-Cloud-based development environments eliminate local setup entirely. Every developer gets an identical, pre-configured workspace in seconds, complete with the correct SDK versions, extensions, and security policies. The devfile in the application repository defines the workspace configuration, so the platform engineer defines it once and every developer consumes it automatically. This is the "golden path" for development environments.
-
-=== Show
-
-**What I say:**
-
-"Now let me introduce you to our new developer. They have just joined the Parasol team and need to start working on the insurance application. Traditionally, their first 1-2 weeks would be spent setting up a local development environment: installing the right Java version, configuring the IDE, connecting to databases, getting the build to work. Let me show you how we eliminate that entirely."
-
-**What I do:**
-
-. Open the **OpenShift web console** at {console_url} and navigate to the **Developer** perspective
-
-. Show the **Topology** view for the Parasol application namespace:
-* Point out the "blue donut" icons representing the running application components
-* "This is the Parasol application running on OpenShift. The developer can see all the components and their status at a glance."
-
-. Click the **DevSpaces icon** on the Parasol application's blue donut:
-* "Notice this icon on the application. One click, and it opens the application's source code directly in a cloud development environment. The developer does not need to clone a repository, install tools, or configure anything."
-
-. Show the DevSpaces workspace starting up automatically, pointing out:
-* The devfile in the repository defines the entire workspace configuration
-* The correct Java SDK, Quarkus CLI, and extensions are installed automatically
-* Database connections and service endpoints are pre-configured
-* "The workspace is created from the devfile in the repository. The developer did not choose a configuration, install plugins, or set up anything. The platform handled it."
-
-. Once the workspace loads, show the fully configured browser-based IDE:
-* File explorer with the complete project structure
-* Terminal with all CLI tools available (`oc`, `mvn`, `quarkus`)
-* Extensions pre-installed (Java, Quarkus, YAML, OpenShift toolkit)
-* Git integration connected to the repository
-
-. Open the `devfile.yaml` in the repository root and briefly show its contents:
-* Point out the container image definition with pre-installed tools
-* Show the endpoint definitions for the application
-* Highlight that this file lives in the repository, so it is versioned and reviewed like any other code
-
-// TODO: Add screenshot of OpenShift Topology view with DevSpaces icon on the blue donut
-image::ocp-topology-devspaces-icon.png[OpenShift Topology view showing the Parasol application with the DevSpaces icon on the blue donut,link=self,window=blank,align="center",width=700,title="One-click access to DevSpaces from the OpenShift Topology view"]
-
-// TODO: Add screenshot of Dev Spaces workspace loaded with Parasol project
-image::devspaces-workspace-loaded.png[Cloud development workspace with the Parasol Insurance project fully loaded and configured,link=self,window=blank,align="center",width=700,title="Fully configured cloud development workspace"]
-
-**What they should notice:**
-
-* The developer clicked a single icon on the running application and landed in a fully configured IDE
-* No installation wizards, no dependency downloads, no manual configuration
-* The workspace is identical for every developer on the team
-* The platform engineer defined this workspace configuration once in a devfile
-* Everything runs in the cloud, nothing on the developer's local machine
-* The devfile is part of the application repository, versioned alongside the code
-
-**Business value callout:**
-
-"What used to take Parasol developers 1-2 weeks just happened in under 2 minutes. The developer clicked one button on the running application and got a fully configured workspace. Every single developer gets the exact same environment, eliminating 'works on my machine' issues entirely. Platform engineers define the workspace once in the devfile, and it becomes the golden path for the entire team."
-
-**If asked:**
-
-Q: "Can developers customize their workspace?"::
-A: "Yes. The devfile provides the baseline, but developers can add personal preferences like themes and keybindings. The important thing is the toolchain, SDKs, and security policies are standardized by the platform team."
-
-Q: "What happens if a developer loses their internet connection?"::
-A: "The workspace state is preserved in the cluster. When they reconnect, they pick up exactly where they left off. No work is lost."
-
-Q: "How does this handle different projects with different requirements?"::
-A: "Each project repository contains its own devfile. A Python project gets Python tooling, a Java project gets Java tooling. Developers just open the repository, and the right environment appears."
-
-Q: "What about VS Code desktop? Do developers have to use the browser?"::
-A: "Dev Spaces supports connecting from VS Code desktop as well. Developers can use the browser-based IDE or their local VS Code installation connecting to the remote workspace. The workspace still runs in the cluster either way."
-
-'''
-
-[#part-3]
-== Part 3 — Adding a feature with Quarkus dev mode
-
-=== Know
-
-_Our new developer is now in their cloud workspace and ready to contribute. They have been assigned their first task: add a new feature to the Parasol claims service. Using Quarkus dev mode, they can write code and see changes reflected immediately without manual builds or restarts. However, in their eagerness to ship, the developer does not write a unit test for the new feature, which will have consequences in Module 2._
-
-**Business challenge:**
-
-* Inner loop (code-build-test) averages 20-30 minutes per iteration
-* Developers lose flow state waiting for builds to complete
-* Slow feedback loops discourage experimentation and innovation
-* Lack of testing discipline means defects are caught late in the cycle
-
-**Current state at Parasol:**
-
-* Average developer makes 8-12 code changes per day, each requiring a full rebuild
-* 3-5 hours per developer per day spent waiting for build and test cycles
-* No continuous testing, developers run tests manually (if at all) before committing
-* Defects frequently discovered in integration, requiring expensive context switching to fix
-
-**Value proposition:**
-
-Quarkus dev mode provides live reload and continuous testing capabilities that reduce the inner loop from minutes to seconds. Developers see their changes reflected immediately, and the framework supports instant feedback on code changes. This keeps developers in flow state and dramatically accelerates feature delivery.
-
-=== Show
-
-**What I say:**
-
-"Our new developer has their workspace ready and has been assigned their first task: add a discount field to the claims service. Let me show you how fast this inner loop is with Quarkus dev mode. The developer writes code, saves, and the application updates immediately, no manual builds, no restarts, no waiting."
-
-**What I do:**
-
-. In the Dev Spaces workspace, open the Parasol claims service source file:
-* Navigate to `src/main/java/com/parasol/claims/ClaimsResource.java`
-
-. Start the application in development mode using the terminal:
+. Switch to the *Topology* view using the *Workloads > Topology* link on the left
 +
-[source,bash,role=execute]
-----
-./mvnw quarkus:dev
-----
+image::m1/topology-dev.png[Topology view for the dev namespace,link=self,window=blank,width=700,title="Topology view of the dev namespace"]
 
-. Show the application starting and the development mode output:
-* Live coding is active
-* The application is running and accessible
+. Click the small *route icon* (the arrow in the top-right corner of the *parasol-insurance* application circle) to open the Parasol Insurance application in a new tab
 
-. Open the running application in a browser preview to show the current claims API response
-
-. Make a code change to add the new feature:
+. In the Parasol application, navigate to the *Inbox* page
 +
-[source,java,role=copy]
-----
-// Add a discount field to the claims response
-claim.setDiscount(0.15);
-----
+image::m1/parasol-inbox.png[The Parasol Insurance application's Inbox page,link=self,window=blank,width=700,title="Parasol Insurance inbox with keyword-based classification"]
 
-. Save the file and immediately show:
-* The application reloads automatically (no restart required)
-* The browser preview reflects the change in seconds
-* No manual build step, no repackaging, no redeployment
+. Observe the emails in the inbox. Notice that some emails are classified as *REVIEW REQUIRED*. This is because the current implementation uses simple keyword matching. Any email the keywords cannot confidently classify gets flagged for manual review. You will fix this in Module 3.
 
-. Point out that the developer has added a feature but has NOT written a unit test:
-* "Notice that our developer has added the discount feature and verified it works in dev mode. But they have not written a unit test for this new functionality. That is going to matter when we get to the CI/CD pipeline in Module 2."
+You've accessed the OpenShift Console, found the Topology view, and learned how to access an application's public endpoint. OpenShift provides a link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/ingress_and_load_balancing/routes[Route resource^] to define and manage public endpoints.
 
-// TODO: Add screenshot of Quarkus dev mode showing live reload
-image::quarkus-dev-mode-live-reload.png[Development mode terminal showing live reload with instant feedback on code changes,link=self,window=blank,align="center",width=700,title="Quarkus dev mode with live reload"]
+=== Verify
 
-**What they should notice:**
+Confirm the following:
 
-* Code changes are reflected in seconds, not minutes
-* No manual build, package, or deploy steps in the inner loop
-* The developer stays in flow state, never leaving the IDE
-* The developer did NOT write a unit test for the new feature (this is intentional and sets up Module 2)
+* The Topology view shows the Parasol Insurance application components in the `{dev_ns}` namespace
+* You can open the Parasol Insurance application via the route icon
+* The Inbox page displays emails, and some are flagged as *REVIEW REQUIRED*
 
-**Business value callout:**
+== Exercise 3: Examine ExternalSecrets
 
-"That code change was reflected in under 3 seconds. At Parasol's current pace, developers wait 20-30 minutes per iteration. Multiply that across 200 developers making 10 changes a day, and you are talking about thousands of hours recovered every month. Quarkus dev mode keeps developers in flow state and dramatically accelerates feature delivery."
+The Parasol Insurance application connects to Apache Kafka and consumes messages from an `email` Topic to perform routing to specific departments. This requires credentials to connect to the Kafka cluster. The platform team at Parasol has standardized on HashiCorp Vault for secret management. The link:https://external-secrets.io/[ExternalSecrets Operator^] connects to the Vault instance and distributes those secrets to applications.
 
-**If asked:**
+. Navigate to *Home > Search*
 
-Q: "Does this work with other languages besides Java?"::
-A: "Red Hat supports multiple runtimes including Node.js, Python, .NET, and Go through OpenShift application runtimes. The live reload experience varies by framework, but the principle of fast feedback is consistent."
+. In the *Resources* dropdown, type `ExternalSecret` and select it
 
-Q: "What about continuous testing?"::
-A: "Quarkus dev mode supports continuous testing where tests run automatically after each code change. In this demo, our developer has not written a test yet, which is a realistic scenario. In Module 2, we will see how the CI/CD pipeline catches this gap."
+. Make sure you are viewing the `{dev_ns}` namespace
 
-Q: "What about debugging?"::
-A: "Development mode includes full debugging support. Developers can set breakpoints, inspect variables, and step through code directly in the cloud IDE. The experience is identical to a local IDE."
-
-[#part-4]
-== Part 4 — Managing DevSpaces environments (platform engineer persona)
-
-=== Know
-
-_So far we have seen the developer's perspective: a pre-configured workspace that just works. But someone has to build and maintain that golden path. This section shifts to the platform engineer persona and shows how DevSpaces environments are centrally managed, governed, and scaled across the organization._
-
-**Business challenge:**
-
-* Platform engineers spend excessive time handling individual developer environment requests
-* No centralized governance over IDE configurations, extensions, or security policies
-* Inconsistent environments across teams lead to integration failures and security blind spots
-* Scaling development environments manually does not keep pace with organizational growth
-
-**Current state at Parasol:**
-
-* Platform team fields 20-30 environment-related support tickets per week
-* No standardized approach to managing workspace configurations across 200+ developers
-* Security team has no visibility into what tools and extensions developers install locally
-* Onboarding a new team to the platform requires manual environment setup by a senior engineer
-
-**Value proposition:**
-
-DevSpaces gives platform engineers centralized control over developer environments through devfiles, resource quotas, and organizational policies. The PE defines the golden path once — specifying approved container images, IDE extensions, resource limits, and security policies — and every developer workspace is automatically provisioned to match. This eliminates per-developer support overhead while ensuring consistent security and compliance.
-
-=== Show
-
-**What I say:**
-
-"We have seen the developer's experience: click one button and get a fully configured workspace. But someone has to define and maintain that experience. Let me show you how the platform engineer manages DevSpaces for the organization."
-
-**What I do:**
-
-. Open the **Devfile Registry** at https://registry.devfile.io/viewer in a browser tab:
-* Show the catalog of community and Red Hat-maintained devfile stacks
-* Point out the available stacks: Java/Quarkus, Node.js, Python, .NET, Go, and more
-* "This is the public devfile registry. Platform engineers use it as a starting point when creating devfiles for their teams. They can pick a stack, customize it with their organization's tools and policies, and add it to their application repositories."
-* Browse a Quarkus stack entry to show what it includes: base container image, tools, extensions, endpoints
-* "The platform engineer does not start from scratch. They take a community-maintained stack and customize it for their organization's requirements."
-
-. Switch to the **OpenShift web console** at {console_url} and navigate to the **Administrator** perspective
-
-. Navigate to **Operators** → **Installed Operators** → **Red Hat OpenShift Dev Spaces**
-
-. Click on the **CheCluster** custom resource (CR) to show the DevSpaces configuration:
-* Show the key configuration sections:
-** **devEnvironments** — default IDE, container build configuration, default resources (CPU, memory) for workspaces
-** **maxNumberOfRunningWorkspacesPerUser** — limits how many workspaces a developer can run simultaneously
-** **secondsOfInactivityBeforeIdling** — idle timeout to reclaim resources from unused workspaces
-** **storage** — persistent volume configuration for workspace data
-* "This is where the platform engineer fine-tunes DevSpaces for the organization. Resource limits, idle timeouts, storage policies, default IDE configuration. These settings apply to every workspace across the cluster."
-
+. You should see two ExternalSecrets:
 +
-[NOTE]
-====
-**Presenter tip:** Do not spend too much time on individual CR fields. The goal is to show that the platform engineer has centralized control, not to walk through every configuration option. Highlight 2-3 settings that resonate with the audience (resource limits, idle timeout, and max workspaces are usually the most interesting).
-====
+* `litellm-credentials` -- LLM API endpoint and key, synced from Vault
+* `kafka-credentials` -- Kafka connection details, synced from Vault
 
-// TODO: Add screenshot of the devfile registry viewer showing available stacks
-image::devfile-registry-viewer.png[Devfile registry viewer showing available community and Red Hat devfile stacks for various languages and frameworks,link=self,window=blank,align="center",width=700,title="Devfile registry: starting point for platform engineers"]
+image::m1/external-secret-list-dev.png[The ExternalSecrets for Parasol Insurance's dev namespace,link=self,window=blank,width=700,title="ExternalSecrets in the dev namespace"]
 
-// TODO: Add screenshot of the CheCluster CR in the OpenShift console
-image::devspaces-checluster-cr.png[OpenShift console showing the CheCluster custom resource with DevSpaces configuration parameters,link=self,window=blank,align="center",width=700,title="DevSpaces operator configuration via custom resource"]
+These ExternalSecrets automatically create Kubernetes Secrets in your namespace by pulling values from HashiCorp Vault. The platform team configured this so that sensitive credentials never need to be committed to source code or manually managed.
 
-**What they should notice:**
-
-* The devfile registry provides a curated catalog of starting points. Platform engineers do not build devfiles from scratch.
-* The DevSpaces operator gives centralized control over workspace policies through a Kubernetes custom resource
-* Configuration changes apply to all new workspaces automatically. No per-developer configuration required.
-* Resource governance (CPU, memory, storage, idle timeout) prevents workspace sprawl
-
-**Business value callout:**
-
-"The platform engineer defines the golden path once: choose a devfile stack from the registry, customize it for the organization, and configure workspace policies through the operator. Every developer gets the same governed environment automatically. No more 20-30 support tickets per week for environment issues. No more security blind spots from unmanaged developer workstations."
-
-**If asked:**
-
-Q: "Can different teams have different devfile configurations?"::
-A: "Yes. Each application repository contains its own devfile. A Java team gets Java tooling, a Python team gets Python tooling. The platform engineer can provide a base devfile template and let teams customize within guardrails."
-
-Q: "What happens when a devfile is updated?"::
-A: "When the devfile in the repository is updated, all new workspaces created from that repository use the updated configuration. Existing running workspaces are not affected until they are restarted."
-
-Q: "Can the platform engineer restrict which container images are used?"::
-A: "Yes. The DevSpaces operator supports configuring trusted image registries and restricting which images can be used in devfiles. This ensures that only approved, scanned images are used in developer workspaces."
-
-'''
-
-== Module 1 summary
-
-=== What we demonstrated
-
-In this module, you saw how Parasol Insurance modernized their application and transformed both the developer and platform engineer experience:
-
-. **Application modernization** — MTA analyzed and guided the migration from legacy Java EE to Quarkus, unlocking cloud native capabilities and setting the foundation for everything that follows
-. **Cloud development environments** — DevSpaces eliminated 1-2 weeks of setup time, giving every developer an identical, pre-configured workspace defined by a devfile in the repository
-. **Live reload development** — Quarkus dev mode reduced the inner development loop from 20-30 minutes to seconds, keeping developers in flow state
-. **Platform engineer governance** — DevSpaces provides centralized control over developer environments through devfiles, resource quotas, and organizational policies
-
-=== Setting up Module 2
-
-Our new developer has added a feature and verified it works in dev mode. But they have not written a unit test. When they push this code and it triggers the CI/CD pipeline in Module 2, that missing test is going to cause a pipeline failure. This is where the platform's guardrails come in: the pipeline enforces quality standards that the developer's inner loop does not.
-
-=== Presenter transition
+. Click on one of the ExternalSecrets and note the *Status* showing it is synced. This means that the `kafka-credentials` Secret requested by the ExternalSecret of the same name will be available for the Parasol Insurance application to consume and use to connect to the Apache Kafka cluster.
 
 [NOTE]
 ====
-**Presenter tip:** The transition to Module 2 should feel natural: "Our developer is happy with their change and is going to push it. Let's see what happens when the platform's CI/CD pipeline picks it up." This creates anticipation and a continuous narrative thread.
+If you're wondering how these resources are created, how they're managed, and where they come from, that will be answered soon. Right now, we're just taking a tour and getting familiar with OpenShift and the application you'll work on during this lab.
 ====
+
+=== Verify
+
+Confirm the following:
+
+* Two ExternalSecrets are visible in the `{dev_ns}` namespace: `litellm-credentials` and `kafka-credentials`
+* The Status of each ExternalSecret shows it is synced
+
+== Exercise 4: Review the CI/CD pipelines
+
+Your build namespace contains Tekton pipelines that build, test, scan, and deploy your application. An initial pipeline run has already completed to pre-build your application image.
+
+. Switch to the `{build_ns}` namespace using the project dropdown at the top
+
+. Click *Pipelines > Pipelines* in the left sidebar. You should see `push` and `tag-promote` pipelines.
++
+image::m1/pipelines-build.png[OpenShift Pipelines View,link=self,window=blank,width=700,title="Tekton pipelines in the build namespace"]
+
+. A `push` link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.21/html/about_openshift_pipelines/understanding-openshift-pipelines#about-pipelinerun_understanding-openshift-pipelines[PipelineRun^] has already completed. This was triggered automatically when your environment was provisioned to pre-build and pre-deploy the Parasol Insurance application. You viewed this in the `dev` environment earlier.
+
+. Click on the link in the *Last run* column to view the PipelineRun details.
++
+image::m1/pipeline-run-push.png[Completed Push PipelineRun,link=self,window=blank,width=700,title="Completed push PipelineRun with all stages passed"]
+
+. Examine the pipeline stages, known as link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.21/html/about_openshift_pipelines/understanding-openshift-pipelines#about-tasks_understanding-openshift-pipelines[Tasks^]:
++
+* *clone* -- clones your source code from GitLab
+* *maven-build* -- compiles the Quarkus application and runs tests
+* *sonar-scan* -- runs SonarQube static analysis for code quality
+* *build-and-push* -- builds the container image and pushes it to Quay
+* *rollout-restart* -- triggers a rolling restart of the deployment in the dev namespace
+
+At this point you've observed that OpenShift provides multiple application-platform capabilities, including the ability to run CI/CD natively on the platform itself.
+
+As an optional exercise, return to the *Home > Search* page and view the ExternalSecrets defined in your `{build_ns}` namespace. You'll notice that multiple Secrets required to securely access code, push/pull images, and interact with SonarQube are defined. Platform administrators can rotate these credentials in Vault at any time, and the ExternalSecrets will automatically synchronize and make sure the latest values are available to your applications and CI/CD pipelines.
+
+=== Verify
+
+Confirm the following:
+
+* Two pipelines are visible in the `{build_ns}` namespace: `push` and `tag-promote`
+* A completed PipelineRun is visible for the `push` pipeline
+* You can click into the PipelineRun and see 5 stages: clone, maven-build, sonar-scan, build-and-push, rollout-restart
+* All stages show a successful (green) status
+
+== Exercise 5: Find your source code in GitLab
+
+Your source code is hosted in GitLab. Each lab participant gets their own fork of the Parasol Insurance repositories.
+
+. Open the *GitLab* tab on the right side of this page, or navigate to {gitlab_url}
+
+. Log in with your credentials:
++
+* *Username:* `{user}`
+* *Password:* `{password}`
+
+. After logging in, you should see two repositories forked into your *Projects* list:
++
+* *parasol-insurance* -- the Parasol Insurance application's Quarkus source code
+* *parasol-insurance-manifests* -- the build and deployment manifests (Helm Charts) with Kubernetes CRs that are deployed and managed by OpenShift GitOps
+
+=== Review the deployment manifests
+
+Take a look at the manifests first. These define the build and deployment environments, using an Infrastructure as Code (IaC) approach.
+
+. Click the *parasol-insurance-manifests* repository. A directory listing is shown.
+
+. Open the `app/templates/` folder. Here you can see the ExternalSecrets (YAML files with `es-` prefix) and other CRs.
++
+image::m1/gitlab-manifests.png[GitLab Parasol Manifests,link=self,window=blank,width=700,title="Deployment manifests in GitLab"]
+
+. Click `deployment.yaml` and locate the `DEV_KAFKA_PASSWORD`. Notice that it references `kafka-credentials` defined by the ExternalSecret.
+
+The manifests are deployed to your namespaces on OpenShift using OpenShift GitOps. You'll see this in-depth in the next exercise.
+
+=== Review the application source code
+
+. Click the GitLab icon in the top-left of the GitLab UI to return to your *Projects* list.
+
+. Click into the *parasol-insurance* repository and explore the project structure. This is a standard Quarkus application with `src/main/java` for source code and `src/main/resources` for configuration.
+
+. Open `src/main/resources/application.properties` and take note of the `DEV_KAFKA_PASSWORD` environment variable. Recall that this is defined by the `deployment.yaml` link:https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[Deployment^] that reads the `es-kafka.yaml` ExternalSecret. At no point is the value of the credential stored in plaintext.
+
+. You'll also notice `mp.messaging.incoming.emails-in.topic` in `application.properties` defines the Kafka Topic that the application consumes emails from.
++
+image::m1/parasol-application-properties.png[Parasol Insurance application.properties file in GitLab,link=self,window=blank,width=700,title="Application properties showing Kafka and credential configuration"]
+
+. Take a look at the code in `src/main/java/com/parasol/EmailRouter.java` and you'll see the `consume` method references the `emails-in` message channel that was defined in `application.properties`.
+
+Now you know how the application source code, and build and deployment manifests come together to form a complete application deployment on OpenShift. This application is designed with the link:https://12factor.net/[Twelve-Factor principles^] in mind.
+
+=== Verify
+
+Confirm the following:
+
+* You can log into GitLab with your credentials
+* Two repositories are visible in your GitLab namespace: `parasol-insurance` and `parasol-insurance-manifests`
+* The `deployment.yaml` in the manifests repo references the `kafka-credentials` ExternalSecret
+* The `application.properties` in the source repo references the same credential via environment variables
+
+== Exercise 6: Explore OpenShift GitOps
+
+The manifests you explored in the parasol-insurance-manifests repository are used to manage all aspects of the application build and deployment on OpenShift via OpenShift GitOps (Argo CD). Argo CD watches your manifest repository for changes and continuously reconciles the state of the manifests on the cluster with those in the repository. This prevents configuration drift and ensures applications are in a known state.
+
+=== View your applications
+
+Argo CD uses link:https://argo-cd.readthedocs.io/en/latest/user-guide/application-specification/[Application CRs^] to manage manifests on your OpenShift cluster.
+
+. Use the Argo CD tab, or visit the {argocd_url}[Argo CD UI] in a new tab.
++
+[IMPORTANT]
+====
+Do not click the *Log in via OpenShift* button.
+====
+
+. Enter your username and password to login:
++
+* *Username:* `{user}`
+* *Password:* `{password}`
+
+. You should see 3 Application tiles displayed. These represent your build, development, and production environments.
++
+image::m1/argocd-apps.png[User Argo CD Applications,link=self,window=blank,width=700,title="Your three Argo CD Applications"]
+
+These applications were created for you when your lab environment was provisioned. Each one corresponds to one of your three namespaces.
+
+=== Update a manifest in GitLab
+
+Let's see GitOps in action by making a small change to a manifest and watching Argo CD reconcile it.
+
+. Return to your parasol-insurance-manifests repository in GitLab.
+
+. Open the `app/templates/deployment.yaml` and select *Edit > Edit single file*.
+
+. In the `metadata.labels` section, add the following label:
++
+[source,yaml,role=execute]
+----
+app.openshift.io/runtime: quarkus
+----
+
+. Scroll down. Enter a commit message:
++
+[source,text,role=execute]
+----
+fix: show the quarkus icon in the openshift topology view
+----
+
+. The result will be similar to the following image:
++
+image::m1/gitlab-update-manifest.png[GitLab Deployment Manifest Update,link=self,window=blank,width=700,title="Adding a label to the deployment manifest in GitLab"]
+
+. Click *Commit changes*.
+
+=== Synchronize the application in Argo CD
+
+. Return to the `{user}-dev` Application in Argo CD, and click *Refresh*.
++
+[NOTE]
+====
+Clicking *Refresh* is not strictly required. Argo CD polls for changes every 3 minutes by default, and webhooks can be used to eliminate polling entirely.
+====
+
+. Once the refresh completes, you'll briefly see an *OutOfSync* message.
++
+image::m1/argocd-out-of-sync.png[Argo CD OutOfSync,link=self,window=blank,width=700,title="Argo CD detecting an out-of-sync state"]
+
+. The *OutOfSync* status will quickly change to *Syncing* since auto-sync is enabled.
+
+. Wait for the application to report *Synced*.
+
+Return to the *Workloads > Topology* view in the OpenShift Console. Make sure the `{dev_ns}` Project is selected. You should see that the Quarkus icon is now displayed on the Parasol Insurance deployment.
+
+image::m1/topology-dev-updated.png[Updated Topology View,link=self,window=blank,width=700,title="Topology view with the Quarkus icon after GitOps sync"]
+
+=== Verify
+
+Confirm the following:
+
+* You can log into Argo CD and see three Applications (build, dev, prod)
+* After committing the label change in GitLab, Argo CD detects the change and syncs
+* The Topology view in OpenShift now shows the Quarkus icon on the Parasol Insurance deployment
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* How OpenShift organizes workloads into namespaces with role-based access control
+* How the `tenant-user` role provides developer access while keeping secrets protected
+* How ExternalSecrets and Vault automate credential management without developer intervention
+* How Tekton pipelines can enforce a consistent build, test, scan, and deploy workflow
+* How application source code and deployment manifests work together following Twelve-Factor principles
+* How Argo CD continuously reconciles cluster state with Git, preventing configuration drift
+
+== Module summary
+
+You have explored the platform and familiarized yourself with the tools you will use throughout this lab.
+
+*What you accomplished:*
+
+* Logged into OpenShift and identified your build, dev, and prod namespaces
+* Opened the running Parasol Insurance application and observed the keyword-based email classification
+* Examined ExternalSecrets that sync credentials from Vault
+* Reviewed the CI/CD pipelines and a completed PipelineRun with five stages
+* Traced how credentials flow from Vault through ExternalSecrets into application configuration
+* Made a manifest change in GitLab and watched Argo CD reconcile it to the cluster
+
+*Next steps:*
+
+In xref:04-module-02-cicd-pipeline.adoc[Module 2] you will launch a cloud development environment, make a code change with an AI coding assistant, and watch it flow through the automated CI/CD pipeline.

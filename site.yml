@@ -1,6 +1,6 @@
 ---
 site:
-  title: OpenShift Advanced App Platform Demo
+  title: "LB2863: OpenShift Application Platform ROI Lab"
   url: https://github.com/rhpds/showroom_template_nookbag
   start_page: modules::index.adoc
 
@@ -20,6 +20,9 @@ ui:
 asciidoc:
   attributes:
     showroom-collection-version: v1.5.2
+
+runtime:
+  fetch: true
 
 output:
   dir: ./www
