@@ -4,3 +4,4 @@
 * xref:03-module-01-developer-experience.adoc[Module 1: Exploring the Platform]
 * xref:04-module-02-cicd-pipeline.adoc[Module 2: Your First Feature]
 * xref:09-module-07-ai-applications.adoc[Module 3: Building Intelligent Applications]
+* xref:10-conclusion.adoc[Conclusion]

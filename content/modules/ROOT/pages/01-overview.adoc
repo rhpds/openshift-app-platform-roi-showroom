@@ -1,27 +1,27 @@
-= What You Will Learn
+= What you will learn
 include::partial$_attributes.adoc[]
 
-== The Application
+== The application
 
-*Parasol Insurance* is a Quarkus-based web application that agents use to processes claims, manage policies, and complete other daily functons. Additionally, the application processes and automatically categorizes incoming customer emails using simple keyword-based routing. Emails arrive via Apache Kafka, are classified and routed, and the results are displayed in an inbox-style UI. Claims and other data is persisted in Parasol's PostgreSQL database.
+*Parasol Insurance* is a Quarkus-based web application that agents use to process claims, manage policies, and complete other daily functions. Additionally, the application processes and automatically categorizes incoming customer emails using simple keyword-based routing. Emails arrive via Apache Kafka, are classified and routed, and the results are displayed in an inbox-style UI. Claims and other data is persisted in Parasol's PostgreSQL database.
 
-Parasol completed an application modernization to Quarkus using https://developers.redhat.com/products/mta[Red Hat's Migration Toolkit for Applications]. The application is already deployed and running in your environment, in both development and production configurations. Over the course of this lab you will explore, modify, and enhance it, experiencing OpenShift's Application Platform capabilities along the way. Additionally, you'll enhance the *Parasol Insurance* application with AI capabilities.
+Parasol completed an application modernization to Quarkus using https://developers.redhat.com/products/mta[Red Hat's Migration Toolkit for Applications^]. The application is already deployed and running in your environment, in both development and production configurations. Over the course of this lab you will explore, modify, and enhance it, experiencing OpenShift's Application Platform capabilities along the way. Additionally, you'll enhance the *Parasol Insurance* application with AI capabilities.
 
-== What You Will Learn
+== What you will learn
 
 * How OpenShift provides a complete application platform, and goes beyond container orchestration
 * How to use Red Hat OpenShift Dev Spaces as a zero-install cloud development environment
 * How AI coding assistants (Claude Code, Continue, Roo, etc.) can be made available to developers using Red Hat OpenShift Dev Spaces
 * How OpenShift natively supports container-based CI/CD pipelines using OpenShift Pipelines (Tekton)
 * How to enforce quality gates including SonarQube analysis as part of CI/CD based on OpenShift Pipelines
-* How GitOps with OpenShift GitOps (Argo CD drives) consistent, auditable deployments, and prevents configuration drift
+* How GitOps with OpenShift GitOps (Argo CD) drives consistent, auditable deployments, and prevents configuration drift
 * How HashiCorp Vault can deliver secrets to your application without manual configuration, nor exposing the secrets to developers
 * How to integrate LLM-powered classification into an existing application using Quarkus and Langchain4j
 * How to promote code to production using a GitOps workflow
 
-== Technologies Used
+== Technologies used
 
-IMPORTANT: Red Hat OpenShift provides a complete application platform, however it does not mandate use of specific dependencies or components. For example, our self-hosted GitLab can be replaced by your preferred SCM tool. Additionally, tools like OpenShift Pipelines can be replaced with Jenkins. This lab is opinionated, but not perspective.
+IMPORTANT: Red Hat OpenShift provides a complete application platform, however it does not mandate use of specific dependencies or components. For example, our self-hosted GitLab can be replaced by your preferred SCM tool. Additionally, tools like OpenShift Pipelines can be replaced with Jenkins. This lab is opinionated, but not prescriptive.
 
 [cols="1,2",options="header"]
 |===
@@ -61,6 +61,6 @@ IMPORTANT: Red Hat OpenShift provides a complete application platform, however i
 |Container image registry
 |===
 
-== Estimated Duration
+== Estimated duration
 
 This lab takes approximately *90 minutes* to complete all three modules.

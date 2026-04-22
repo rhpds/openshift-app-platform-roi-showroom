@@ -22,3 +22,6 @@ tabs:
 
   - name: GitLab
     url: 'https://gitlab-gitlab.${DOMAIN}/'
+
+  - name: Quay
+    url: 'https://quay.${DOMAIN}'

@@ -1,22 +1,22 @@
 = {lab_name}
 include::partial$_attributes.adoc[]
 
-Welcome to the *{lab_name}* hands-on lab. In this lab you will experience how Red Hat OpenShift delivers a complete application platform — not just container orchestration, but integrated development environments, automated CI/CD, secrets management, and AI-ready application delivery.
+Welcome to the *{lab_name}* hands-on lab. In this lab you will experience how Red Hat OpenShift delivers a complete application platform, going beyond container orchestration to include integrated development environments, automated Continuous Integration and Continuous Delivery (CI/CD), secrets management, and AI-ready application delivery.
 
 You will work with the *Parasol Insurance* application, a Quarkus-based app that processes customer emails using Apache Kafka and stores claims data in PostgreSQL.
 
 *What you will do:*
 
-* *Module 1: Exploring the Platform* — Log into OpenShift, explore your namespaces, review the running application, and browse your source code in GitLab
-* *Module 2: Your First Feature* — Launch a cloud development environment, make a code change with an AI coding assistant, and watch it flow through an automated CI/CD pipeline
-* *Module 3: Building Intelligent Applications* — Replace a naive keyword classifier with an LLM-powered email routing service and promote it to production using a tag-based GitOps workflow
+* *Module 1: Exploring the Platform* -- Log into OpenShift, explore your namespaces, review the running application, and browse your source code in GitLab
+* *Module 2: Your First Feature* -- Launch a cloud development environment, make a code change with an AI coding assistant, and watch it flow through an automated CI/CD pipeline
+* *Module 3: Building Intelligent Applications* -- Replace a naive keyword classifier with a Large Language Model (LLM)-powered email routing service and promote it to production using a tag-based GitOps workflow
 
 *Prerequisites:*
 
 * A modern web browser (Chrome, Firefox, or Edge)
-* Everything runs in the cloud — no local software installation required
+* Everything runs in the cloud, no local software installation required
 
 *Get started:*
 
-* xref:01-overview.adoc[Lab Overview] — What you will learn and the technologies involved
-* xref:02-details.adoc[Environment Access] — Your credentials and environment URLs
+* xref:01-overview.adoc[Lab Overview] -- What you will learn and the technologies involved
+* xref:02-details.adoc[Environment Access] -- Your credentials and environment URLs

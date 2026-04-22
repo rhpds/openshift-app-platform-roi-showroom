@@ -1,7 +1,7 @@
-= Environment Access
+= Environment access
 include::partial$_attributes.adoc[]
 
-== Your Credentials
+== Your credentials
 
 You will use the same credentials to log into the OpenShift Web Console, OpenShift GitOps, GitLab, and Dev Spaces.
 
@@ -16,9 +16,9 @@ You will use the same credentials to log into the OpenShift Web Console, OpenShi
 |`{password}`
 |===
 
-== Your Namespaces
+== Your namespaces
 
-Your environment includes three pre-provisioned namespaces:
+Your environment includes 3 pre-provisioned namespaces:
 
 [cols="1,2",options="header"]
 |===
@@ -34,10 +34,9 @@ Your environment includes three pre-provisioned namespaces:
 |Production environment. The Parasol Insurance application runs here after a tag-based promotion.
 |===
 
-You have a custom `tenant-user` role in each namespace. This gives you access to your namespaces, but you can't see view Secrets nor their values - you're a developer, not an admin!
+You have a custom `tenant-user` role in each namespace. This gives you access to your namespaces, but you can't view Secrets nor their values - you're a developer, not an admin!
 
 == Access URLs
-
 [cols="1,2",options="header"]
 |===
 |Service |URL

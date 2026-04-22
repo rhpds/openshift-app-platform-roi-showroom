@@ -1,0 +1,52 @@
+= Conclusion
+include::partial$_attributes.adoc[]
+
+Congratulations on completing the *{lab_name}* lab!
+
+== What you have learned
+
+Over the course of 3 modules, you experienced how Red Hat OpenShift delivers a complete application platform that goes beyond container orchestration.
+
+*Module 1: Exploring the platform*
+
+* How OpenShift organizes workloads into namespaces with role-based access control
+* How the `tenant-user` role provides developer access while keeping secrets protected
+* How ExternalSecrets and Vault automate credential management without developer intervention
+* How Tekton pipelines enforce a consistent build, test, scan, and deploy workflow
+* How application source code and deployment manifests work together following Twelve-Factor principles
+* How Argo CD continuously reconciles cluster state with Git, preventing configuration drift
+
+*Module 2: Your first feature*
+
+* How OpenShift Dev Spaces provides a zero-install cloud development environment with pre-configured tools and extensions
+* How devfiles standardize development environments so every developer gets the same setup
+* How AI coding assistants like Continue can help developers explore unfamiliar codebases and implement features
+* How Quarkus dev mode with nested containers enables a full local-like development experience on the cluster
+* How a git push triggers an automated CI/CD pipeline that builds, tests, scans, and deploys your application
+* How SonarQube quality gates integrate into the pipeline to enforce code quality standards
+
+*Module 3: Building intelligent applications*
+
+* How Langchain4j and Quarkus make it straightforward to integrate LLM-powered features into existing Java applications
+* How platform-managed credentials (`LLM_BASE_URL`, `LLM_API_KEY`) flow from Vault through ExternalSecrets into both Dev Spaces workspaces and deployed environments, without developers managing secrets
+* How the same CI/CD pipeline and security controls apply whether you are changing a date format or integrating an LLM
+* How a tag-based GitOps workflow enables controlled production promotions through merge requests
+* How Argo CD continuously reconciles the cluster state with Git, ensuring production matches the approved manifests
+
+== The platform advantage
+
+Throughout this lab, you worked with a single application on a single platform. Every tool you used -- Dev Spaces, Pipelines, GitOps, Vault, Quay, SonarQube -- was integrated into OpenShift and available without any local setup or manual configuration. The platform team configured the infrastructure once, and every developer gets the same secure, productive experience.
+
+This is what an application platform delivers: not just a place to run containers, but a complete environment where developers can build, test, secure, and ship applications with confidence.
+
+== References
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/{ocp_version}/[Red Hat OpenShift Container Platform documentation^]
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_dev_spaces/{devspaces_version}/[Red Hat OpenShift Dev Spaces documentation^]
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/{pipelines_version}/[Red Hat OpenShift Pipelines documentation^]
+* link:https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/{gitops_version}/[Red Hat OpenShift GitOps documentation^]
+* link:https://docs.redhat.com/en/documentation/red_hat_build_of_quarkus/{quarkus_version}/[Red Hat build of Quarkus documentation^]
+* link:https://devfile.io/[Devfile specification^]
+* link:https://external-secrets.io/[ExternalSecrets Operator^]
+* link:https://docs.quarkiverse.io/quarkus-langchain4j/dev/index.html[Quarkus Langchain4j extension^]
+* link:https://12factor.net/[The Twelve-Factor App^]

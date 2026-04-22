@@ -33,7 +33,7 @@ Your first task is to log into the OpenShift web console and verify that your en
 
 . Navigate to *Home > Projects* in the *OpenShift Console*
 
-. You should see three projects:
+. You should see 3 projects:
 +
 * `{build_ns}` -- where your CI/CD pipelines run
 * `{dev_ns}` -- your development environment
@@ -152,7 +152,7 @@ Confirm the following:
 
 * Two pipelines are visible in the `{build_ns}` namespace: `push` and `tag-promote`
 * A completed PipelineRun is visible for the `push` pipeline
-* You can click into the PipelineRun and see five stages: clone, maven-build, sonar-scan, build-and-push, rollout-restart
+* You can click into the PipelineRun and see 5 stages: clone, maven-build, sonar-scan, build-and-push, rollout-restart
 * All stages show a successful (green) status
 
 == Exercise 5: Find your source code in GitLab
@@ -230,7 +230,7 @@ Do not click the *Log in via OpenShift* button.
 * *Username:* `{user}`
 * *Password:* `{password}`
 
-. You should see three Application tiles displayed. These represent your build, development, and production environments.
+. You should see 3 Application tiles displayed. These represent your build, development, and production environments.
 +
 image::m1/argocd-apps.png[User Argo CD Applications,link=self,window=blank,width=700,title="Your three Argo CD Applications"]
 

@@ -1,33 +1,48 @@
-= Module 3: Building Intelligent Applications
+= Module 3: Building intelligent applications
 include::partial$_attributes.adoc[]
 :imagesdir: ../assets/images
 
-In Module 1 you saw that the Parasol Insurance inbox uses simple keyword matching to classify emails. Ambiguous emails that the keywords cannot confidently classify are flagged as *REVIEW REQUIRED*, requiring manual triage by a claims administrator. In this module you will replace that keyword matching with an LLM-powered classification service that intelligently routes every email.
+In Module 1 you saw that the Parasol Insurance inbox uses simple keyword matching to classify emails. Ambiguous emails that the keywords cannot confidently classify are flagged as *REVIEW REQUIRED*, requiring manual triage by a claims administrator. In this module you will replace that keyword matching with a Large Language Model (LLM)-powered classification service that intelligently routes every email, then promote it to production.
 
-== Overlay the LLM Classification Code
+== Learning objectives
 
-The LLM classification code has been prepared on a branch in your repository. You will overlay it onto your current working branch.
+By the end of this module, you will be able to:
+
+* Integrate an LLM-powered classification service into an existing Quarkus application using Langchain4j
+* Explain how platform-managed credentials (`LLM_BASE_URL`, `LLM_API_KEY`) flow from Vault through ExternalSecrets into both Dev Spaces and deployed environments
+* Test LLM-powered features locally using Quarkus dev mode
+* Promote a feature to production using a tag-based GitOps workflow through GitLab
+* Inspect container images in Quay after a pipeline build
+* Verify a production deployment using Argo CD
+
+== Exercise 1: Add LLM classification to the application
+
+To save time and reduce errors, the LLM classification code has been prepared on a branch in your repository. You will overlay it onto your current working branch, review the key changes, and test the new classification locally.
+
+=== Overlay the LLM classification code
 
 . Return to your *Dev Spaces* workspace (reopen it from the Topology view if needed)
 
 . If Quarkus dev mode is still running, stop it by pressing `Ctrl+C` in the terminal where it is running
 
-. Open a new terminal and run the following command to overlay the LLM classification code:
+. Open a new terminal (top-left menu *Terminal > New Terminal*) and run the following command to overlay the LLM classification code:
 +
 [source,bash,role=execute]
 ----
 git checkout origin/llm-classification -- .
 ----
 +
-This pulls the LLM classification files onto your current branch without switching branches.
+This pulls the LLM classification files onto your current branch without switching branches. The changed files can be seen in the *Source Control* view on the left.
++
+image::m3/devspaces-llm-changes.png[Changes pulled in from the llm-classification branch,link=self,window=blank,width=700,title="Source Control showing the overlaid LLM classification files"]
 
-== Review the Changes
+=== Review the changes
 
 Take a few minutes to review the key files that were added or modified:
 
 . Open `src/main/java/com/parasol/EmailClassifier.java`
 +
-This is the LLM classification service. Notice the `@RegisterAiService` annotation from Langchain4j and the `@SystemMessage` that defines the classification rules. The system message tells the LLM how to categorize each email — what qualifies as a claim, a follow-up, a new customer inquiry, etc.
+This is the LLM classification service. Notice the `@RegisterAiService` annotation from Langchain4j and the `@SystemMessage` that defines the classification rules. The system message tells the LLM how to categorize each email, including what qualifies as a claim, a follow-up, a new customer inquiry, and so on.
 
 . Open `src/main/java/com/parasol/EmailRouter.java`
 +
@@ -37,16 +52,18 @@ Previously this file contained the keyword matching logic. Now it delegates clas
 +
 Look for the LLM configuration properties:
 +
+[source,properties]
 ----
 %dev.quarkus.langchain4j.openai.base-url=${LLM_BASE_URL}
 %dev.quarkus.langchain4j.openai.api-key=${LLM_API_KEY}
+%dev.quarkus.langchain4j.openai.chat-model.model-name=qwen3-14b
 ----
 +
-The `%dev` prefix means these properties apply when running in Quarkus dev mode. The `LLM_BASE_URL` and `LLM_API_KEY` environment variables are already configured in your Dev Spaces workspace.
+The `%dev` prefix means these properties apply when running in Quarkus dev mode. The `LLM_BASE_URL`, `LLM_API_KEY`, and `qwen3-14b` model are variables that the platform administrator configured specifically for adding agentic features to applications. These credentials are pre-loaded into your Dev Spaces workspace so that developers can test LLM-powered features locally without any manual setup.
 +
-In the deployed environments (dev and prod namespaces), these credentials are injected by the ExternalSecrets you saw in Module 1 — the platform engineer configured Vault to provide LLM credentials, and custom Dev Spaces base images can include additional tools and configuration.
+In the deployed environments (dev and prod namespaces), valid vLLM credentials are injected by the ExternalSecrets you saw in Module 1. The platform engineer stored the LLM endpoint and API key in Vault, and the ExternalSecrets Operator syncs them into your namespaces as Kubernetes Secrets. This means credentials flow seamlessly from local development in Dev Spaces to deployed workloads on the cluster, all managed by the platform team.
 
-== Test the LLM Classification
+=== Test the LLM classification
 
 . Start the application in dev mode again using *Terminal > Run Task... > devfile > Start Dev Mode*
 
@@ -57,78 +74,194 @@ In the deployed environments (dev and prod namespaces), these credentials are in
 . Notice the difference: there are *no REVIEW REQUIRED* emails. Every email has been intelligently classified with a specific category and a detailed routing reason from the LLM.
 +
 Compare this to what you saw in Module 1 where several emails were flagged for manual review. The LLM understands the content and context of each email, making nuanced classification decisions that keyword matching cannot.
-
-== Commit and Push
-
-. Open a terminal in Dev Spaces and run:
 +
-[source,bash,role=execute]
+image::m3/devspaces-routed-emails.png[All emails are now routed successfully,link=self,window=blank,width=700,title="Inbox with LLM-classified emails and no REVIEW REQUIRED entries"]
+. Return to OpenShift Dev Spaces and view the logs printed by the Quarkus application. You'll notice the LLM's reasoning is printed in the logs.
++
+image::m3/devspaces-quarkus-logs.png[Quarkus logs showing the LLM classification reasoning,link=self,window=blank,width=700,title="Quarkus dev mode logs with LLM classification reasoning"]
+. Return to the application preview and click an email in the Inbox. The LLM's reasoning is displayed.
++
+image::m3/quarkus-app-reason.png[Reasoning shown in the Quarkus application,link=self,window=blank,width=700,title="Email detail view showing the LLM classification reasoning"]
+
+=== Verify
+
+Confirm the following before moving on:
+
+* The `EmailClassifier.java` file contains the `@RegisterAiService` annotation and a `@SystemMessage`
+* The `application.properties` file references `LLM_BASE_URL`, `LLM_API_KEY`, and the `qwen3-14b` model
+* The Inbox page shows every email classified with a category and reason, with no *REVIEW REQUIRED* entries
+
+== Exercise 2: Deploy to development and check the container image
+
+Now that the LLM classification works locally, push the changes through the same CI/CD pipeline you used in Module 2.
+
+=== Commit and push
+
+. Stop Quarkus dev mode by pressing `Ctrl+C` in the terminal
+
+. In the Dev Spaces left sidebar, click the *Source Control* icon (the branch icon)
+
+. Review the changed files in the *Changes* section
+
+. Enter a commit message:
++
+[source,text,role=execute]
 ----
-git add -A && git commit -m "feat: replace keyword matching with LLM classification" && git push
+feat: replace keyword matching with LLM classification
 ----
+
+. Click the down arrow on the *Commit* button and click *Commit & Push*
 
 . Switch to the *OpenShift Console* and navigate to the `{build_ns}` namespace
 
-. Watch the new PipelineRun in *Pipelines*. The same pipeline runs as before: clone, maven-build, sonar-scan, build-and-push, rollout-restart.
+. Select *Pipelines > Pipelines* from the left menu. Watch the new `push` PipelineRun in progress. The same pipeline Tasks run as before: clone, maven-build, sonar-scan, build-and-push, rollout-restart.
 
 . Wait for the pipeline to complete.
 
-== Promote to Production
+=== Check the container image in Quay
 
-So far, all your changes have deployed to the dev environment. Now you will promote the LLM classification feature to production using a tag-based GitOps workflow.
+The pipeline built a new container image and pushed it to the Quay registry. Let's verify it.
 
-. In the Dev Spaces terminal, create and push a Git tag:
-+
-[source,bash,role=execute]
-----
-git tag 1.0 && git push --tags
-----
-
-. Switch to the *OpenShift Console* and navigate to the `{build_ns}` namespace
-
-. A new PipelineRun starts — this is the *tag pipeline* (`parasol-insurance-tag-promote`). It builds a tagged image and then runs an `update-prod-manifest` task that creates a merge request in your `parasol-insurance-manifests` repository to update `values-prod.yaml` with the tag `1.0`.
-
-. Wait for the tag pipeline to complete.
-
-== Merge the Production Promotion
-
-. Open *GitLab* (use the tab on the right, or navigate to {gitlab_url})
-
-. Navigate to your `parasol-insurance-manifests` repository
-
-. Click *Merge Requests* in the left sidebar
-
-. Open the merge request created by the tag pipeline. Review the changes — it updates `image.tag` from `latest` to `1.0` in `values-prod.yaml`.
-
-. Click *Merge* to merge the changes
-
-== Verify the Production Deployment
-
-. Switch to the *OpenShift Console*
-
-. Navigate to the `{prod_ns}` namespace
-
-. In the *Developer* perspective, click *Topology*
-
-. Watch the Parasol Insurance pod update with the new production image
-
-. Once the rollout completes, click the route icon to open the production application and confirm the LLM classification is working
-
-== Confirm with Argo CD
-
-. Open the *Argo CD* tab on the right side of this page, or navigate to {argocd_url}
+. Open the *Quay* tab on the right side of this page
 
 . Log in with your credentials:
 +
 * *Username:* `{user}`
 * *Password:* `{password}`
 
-. Find the `{user}-prod` Application in the dashboard
+. You should see the `parasol-insurance` repository.
++
+image::m3/quay-parasol-repository.png[Parasol Insurance repository in the Quay image registry,link=self,window=blank,width=700,title="Parasol Insurance repository in Quay"]
 
-. Note the commit SHA and message — they match the merge you just performed in GitLab. This is GitOps in action: the cluster state is driven by what is in Git. Argo CD detected the change in your manifests repository and reconciled the production deployment to match.
+. Click and check that it has a `latest` container image that was just built by the pipeline. Note the `latest` tag and the timestamp confirming it was pushed moments ago.
++
+image::m3/quay-parasol-image.png[Parasol Insurance repository showing the latest image tag,link=self,window=blank,width=700,title="Container image with latest tag in Quay"]
 
-== Summary
+=== Verify
 
-You replaced a naive keyword classifier with an LLM-powered classification service, deployed it through the same trusted CI/CD pipeline, and promoted it to production using a tag-based GitOps workflow. The LLM credentials were provided by the platform through ExternalSecrets and Vault — you never had to manage API keys manually.
+Confirm the following before moving on:
 
-The same pipeline, the same security controls, the same GitOps delivery — whether you are changing a date format or integrating an LLM, the platform handles the complexity so you can focus on the code.
+* The PipelineRun completed successfully with all 5 stages green
+* The Quay registry contains a `parasol-insurance` image with a recent `latest` tag
+
+== Exercise 3: Promote to production
+
+So far, all your changes have deployed to the dev environment. Now you will promote the LLM classification feature to production using a tag-based GitOps workflow.
+
+=== Create a release tag in GitLab
+
+. Open the *GitLab* tab on the right side of this page, or navigate to {gitlab_url}
+
+. Navigate to your *parasol-insurance* repository
+
+. In the left sidebar, click *Code > Tags*
+
+. Click *New tag*
+
+. Enter `v1.0` as the tag name
++
+image::m3/gitlab-create-tag.png[Create a new tag in GitLab named v1.0,link=self,window=blank,width=700,title="Creating the v1.0 tag in GitLab"]
+
+. Click *Create tag*
+
+=== Watch the tag-promote pipeline
+
+. Switch to the *OpenShift Console* and navigate to the `{build_ns}` namespace
+
+. Select *Pipelines > Pipelines* from the left menu
+
+. A new PipelineRun starts for the `tag-promote` pipeline. Click on it to watch the stages.
++
+image::m3/openshift-tag-pipeline.png[A new tag-promote pipeline is shown in the OpenShift Pipelines view,link=self,window=blank,width=700,title="The tag-promote PipelineRun in progress"]
+
+. Note the *open-prod-pr* task. This task automatically creates a merge request in your `parasol-insurance-manifests` repository to update `values-prod.yaml` with the `v1.0` image tag.
++
+image::m3/openshift-tag-pipeline-tasks.png[The open-prod-pr Task is the last in the PipelineRun,link=self,window=blank,width=700,title="Tag-promote pipeline stages with the open-prod-pr task"]
+
+. Wait for the tag-promote pipeline to complete.
+
+=== Merge the production promotion
+
+. Return to *GitLab* and navigate to your `parasol-insurance-manifests` repository
+
+. Click *Merge Requests* in the left sidebar
+
+. Open the merge request created by the tag-promote pipeline. Review the *Changes* tab. It updates `image.tag` to `v1.0` in `values-prod.yaml`.
++
+image::m3/gitlab-promote-pr.png[The Merge Request that bumps our production image to v1.0,link=self,window=blank,width=700,title="Merge request updating the production image tag to v1.0"]
+
+. Click *Merge* to merge the changes
+
+. Open the *Argo CD* tab on the right side of this page, or navigate to {argocd_url}
+
+. Find the `{user}-prod` Application and click *Refresh*. You should briefly see the application flash *OutOfSync* as Argo CD detects the manifest change, then transition to *Syncing* as it reconciles the new image tag.
++
+image::m3/gitops-out-of-sync.png[OpenShift GitOps will briefly show that the Application is out of sync after the refresh,link=self,window=blank,width=700,title="Argo CD showing OutOfSync status before reconciling"]
++
+[NOTE]
+====
+Depending on your timing, the application may already be syncing or synced. Argo CD polls for changes every 3 minutes by default, so if you merged a moment ago the sync may have started automatically before you clicked Refresh.
+====
+
+. Once the Application shows *Synced*, note the commit SHA and message. They match the merge you just performed in GitLab. This is GitOps in action: the cluster state is driven by what is in Git.
+
+=== Verify
+
+Confirm the following before moving on:
+
+* A `v1.0` tag exists in your parasol-insurance repository in GitLab
+* The `tag-promote` PipelineRun completed successfully, including the *open-prod-pr* task
+* The merge request in `parasol-insurance-manifests` has been merged
+* The Argo CD `{user}-prod` Application shows *Synced* status and the commit SHA matches the merge
+
+== Exercise 4: Verify the production deployment
+
+Argo CD has synced your production namespace with the updated manifests. Let's confirm the application is running with LLM classification.
+
+. In the *OpenShift Console*, navigate to the `{prod_ns}` namespace
+
+. Navigate to *Workloads > Pods*
+
+. The `parasol-insurance` Pod should have updated with the new production image. This is seen as a new Pod with a recent *Created* time.
++
+image::m3/openshift-prod-pods.png[Newly created Parasol Insurance application Pod,link=self,window=blank,width=700,title="New production Pod after Argo CD sync"]
+
+. Once the rollout completes, click *Networking > Routes* from the left menu
+
+. Click the URL in the *Location* column to view the production Parasol Insurance application
+
+. Navigate to the *Inbox* page and confirm the LLM classification is working. Every email should be classified with a category and reason, with no *REVIEW REQUIRED* entries.
+
+=== Verify
+
+Confirm the following before moving on:
+
+* The production Parasol Insurance application is running with LLM-powered email classification
+* Every email in the Inbox is classified with a category and reason, with no *REVIEW REQUIRED* entries
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* How Langchain4j and Quarkus make it straightforward to integrate LLM-powered features into existing Java applications
+* How platform-managed credentials (`LLM_BASE_URL`, `LLM_API_KEY`) flow from Vault through ExternalSecrets into both Dev Spaces workspaces and deployed environments, without developers managing secrets
+* How the same CI/CD pipeline and security controls apply whether you are changing a date format or integrating an LLM
+* How a tag-based GitOps workflow enables controlled production promotions through merge requests
+* How Argo CD continuously reconciles the cluster state with Git, ensuring production matches the approved manifests
+
+== Module summary
+
+You replaced a naive keyword classifier with an LLM-powered classification service, deployed it through the same trusted CI/CD pipeline, and promoted it to production using a tag-based GitOps workflow.
+
+*What you accomplished:*
+
+* Overlaid the LLM classification code from a prepared branch
+* Reviewed the `EmailClassifier` service and understood how `LLM_BASE_URL`, `LLM_API_KEY`, and the `qwen3-14b` model are configured by the platform administrator
+* Tested the LLM classification locally in Quarkus dev mode
+* Pushed the changes through the automated CI/CD pipeline
+* Inspected the container image in Quay
+* Created a `v1.0` release tag in GitLab to trigger the tag-promote pipeline
+* Merged the production promotion merge request
+* Verified the production deployment and confirmed GitOps reconciliation in Argo CD
+
+*The same pipeline, the same security controls, the same GitOps delivery.* Whether you are changing a date format or integrating an LLM, the platform handles the complexity so you can focus on the code.
