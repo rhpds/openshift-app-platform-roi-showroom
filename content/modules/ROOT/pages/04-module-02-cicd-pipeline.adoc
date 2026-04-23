@@ -272,8 +272,9 @@ image::m2/openshift-build-push-progress.png[Viewing the build tasks and progress
 
 . Expand the task logs and look for the line that reads:
 +
+[subs=attributes+]
 ----
-SonarQube Report: https://sonarqube-sonarqube.{openshift_cluster_ingress_domain}/dashboard?id=parasol-insurance-{username}
+SonarQube Report: https://sonarqube-sonarqube.{openshift_cluster_ingress_domain}/dashboard?id=parasol-insurance-{user}
 ----
 
 . This URL is already pre-loaded in *SonarQube* tab on the right side of this page. Refresh it to see the analysis report for your project. The report shows code quality metrics, potential issues, and test coverage information.
