@@ -8,7 +8,19 @@ nav:
 asciidoc:
   attributes:
     lab_name: "OpenShift Application Platform ROI Lab"
-    release-version: main
+    release-version: master
     page-pagination: true
     # Include shared attributes file
     page-attributes: attributes.adoc
+
+    # User namespace shortcuts
+    build_ns: user-${guid}-build
+    dev_ns: user-${guid}-dev
+    prod_ns: user-${guid}-prod
+
+    # Console URLs
+    # openshift_console_url: predefined by RHDP
+    argocd_url: https://openshift-gitops-server-openshift-gitops.${openshift_cluster_ingress_domain}
+    sonarqube_url: https://sonarqube-sonarqube.${openshift_cluster_ingress_domain}
+    devspaces_url: https://devspaces.${openshift_cluster_ingress_domain}
+    gitlab_url: https://gitlab-gitlab.${openshift_cluster_ingress_domain}
