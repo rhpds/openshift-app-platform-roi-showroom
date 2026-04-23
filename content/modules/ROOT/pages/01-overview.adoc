@@ -11,7 +11,7 @@ Parasol completed an application modernization to Quarkus using https://develope
 
 * How OpenShift provides a complete application platform, and goes beyond container orchestration
 * How to use Red Hat OpenShift Dev Spaces as a zero-install cloud development environment
-* How AI coding assistants (Claude Code, Continue, Roo, etc.) can be made available to developers using Red Hat OpenShift Dev Spaces
+* How AI coding assistants (Claude Code, Continue, Roo, etc.) with approved models can be made available to developers using Red Hat OpenShift Dev Spaces
 * How OpenShift natively supports container-based CI/CD pipelines using OpenShift Pipelines (Tekton)
 * How to enforce quality gates including SonarQube analysis as part of CI/CD based on OpenShift Pipelines
 * How GitOps with OpenShift GitOps (Argo CD) drives consistent, auditable deployments, and prevents configuration drift
