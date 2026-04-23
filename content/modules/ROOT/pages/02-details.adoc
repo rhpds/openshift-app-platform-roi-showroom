@@ -1,5 +1,5 @@
 = Environment access
-include::partial$attributes.adoc[]
+include::partial$_attributes.adoc[]
 
 == Your credentials
 
