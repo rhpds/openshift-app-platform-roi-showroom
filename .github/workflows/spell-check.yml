@@ -31,7 +31,7 @@ jobs:
           node-version: '20'
 
       - name: Install cspell
-        run: npm install -g cspell
+        run: npm install -g cspell@9.8.0
 
       - name: Run spell check
         run: |
