@@ -28,10 +28,20 @@ Your first task is to log into the OpenShift web console and verify that your en
 
 . Enter your credentials:
 +
-* *Username:* `{user}`
-* *Password:* `{password}`
-
-. Navigate to *Home > Projects* in the *OpenShift Console*
+--
+*Username:*
+[source,text,role=execute,subs=attributes+]
+----
+{user}
+----
+*Password:*
+[source,text,role=execute,subs=attributes+]
+----
+{password}
+----
+--
+. Dismiss the OpenShift Tour popup if it appears
+. Navigate to *Home > Projects* in the *OpenShift Console* using the left-hand menu
 +
 TIP: The various web consoles used throughout this lab have menus on the left. These menus are expanded in the screenshots shown in this lab guide. Depending on the size of your screen, these menus might be collapsed. Use the icons in top-left of each UI to expand them, e.g the OpenShift Console has an icon composed of three horizontal lines that opens/closes the side menu.
 . You should see 3 projects:
@@ -70,7 +80,7 @@ image::m1/topology-dev.png[Topology view for the dev namespace,link=self,window=
 
 . Click the small *route icon* (the arrow in the top-right corner of the *parasol-insurance* application circle) to open the Parasol Insurance application in a new tab
 
-. In the Parasol application, navigate to the *Inbox* page
+. In the Parasol application, navigate to the *Inbox* page. Wait a few seconds and emails will start appearing
 +
 image::m1/parasol-inbox.png[The Parasol Insurance application's Inbox page,link=self,window=blank,width=700,title="Parasol Insurance inbox with keyword-based classification"]
 
@@ -88,13 +98,13 @@ Confirm the following:
 
 == Exercise 3: Examine ExternalSecrets
 
-The Parasol Insurance application connects to Apache Kafka and consumes messages from an `email` Topic to perform routing to specific departments. This requires credentials to connect to the Kafka cluster. The platform team at Parasol has standardized on HashiCorp Vault for secret management. The link:https://external-secrets.io/[ExternalSecrets Operator^] connects to the Vault instance and distributes those secrets to applications.
+The Parasol Insurance application connects to Apache Kafka and consumes messages from an `email` Topic to perform routing to specific departments. This requires credentials to connect to the Kafka cluster. The platform team at Parasol has standardized on link:https://www.redhat.com/en/blog/how-hashicorp-vault-red-hat-openshift-can-work-together[HashiCorp Vault^] for secret management. The link:https://external-secrets.io/[ExternalSecrets Operator^] on your cluster connects to Parasol's Vault instance and distributes secrets to applications.
 
 . Navigate to *Home > Search*
 
 . In the *Resources* dropdown, type `ExternalSecret` and select it
 
-. Make sure you are viewing the `{dev_ns}` namespace
+. Make sure you are viewing the `{dev_ns}` namespace, by selecting it in the *Project* dropdown
 
 . You should see two ExternalSecrets:
 +
@@ -105,7 +115,7 @@ image::m1/external-secret-list-dev.png[The ExternalSecrets for Parasol Insurance
 
 These ExternalSecrets automatically create Kubernetes Secrets in your namespace by pulling values from HashiCorp Vault. The platform team configured this so that sensitive credentials never need to be committed to source code or manually managed.
 
-. Click on one of the ExternalSecrets and note the *Status* showing it is synced. This means that the `kafka-credentials` Secret requested by the ExternalSecret of the same name will be available for the Parasol Insurance application to consume and use to connect to the Apache Kafka cluster.
+Click on one the name of one of the ExternalSecrets and note the *Status* showing it is synced. This means that the `kafka-credentials` Secret requested by the ExternalSecret of the same name will be available for the Parasol Insurance application to consume and use to connect to the Apache Kafka cluster.
 
 [NOTE]
 ====
@@ -132,6 +142,8 @@ image::m1/pipelines-build.png[OpenShift Pipelines View,link=self,window=blank,wi
 . A `push` link:https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/1.21/html/about_openshift_pipelines/understanding-openshift-pipelines#about-pipelinerun_understanding-openshift-pipelines[PipelineRun^] has already completed. This was triggered automatically when your environment was provisioned to pre-build and pre-deploy the Parasol Insurance application. You viewed this in the `{dev_ns}` environment earlier.
 
 . Click on the link in the *Last run* column to view the PipelineRun details.
++
+TIP: If the *Last run* column is not visible, increase the width of the OpenShift window or select the *Pipeline Runs* tab to find the latest run.
 +
 image::m1/pipeline-run-push.png[Completed Push PipelineRun,link=self,window=blank,width=700,title="Completed push PipelineRun with all stages passed"]
 
@@ -164,17 +176,27 @@ Your source code is hosted in GitLab. Each lab participant gets their own fork o
 
 . Log in with your credentials:
 +
-* *Username:* `{user}`
-* *Password:* `{password}`
+--
+*Username:*
+[source,text,role=execute,subs=attributes+]
+----
+{user}
+----
+*Password:*
+[source,text,role=execute,subs=attributes+]
+----
+{password}
+----
+--
 
 . After logging in, you should see two repositories forked into your *Projects* list:
 +
 * *parasol-insurance* -- the Parasol Insurance application's Quarkus source code
-* *parasol-insurance-manifests* -- the build and deployment manifests (Helm Charts) with Kubernetes CRs that are deployed and managed by OpenShift GitOps
+* *parasol-insurance-manifests* -- the build and deployment manifests (Helm Charts) with Kubernetes CRs (like the the ExternalSecret and Route resources) that are deployed and managed by OpenShift GitOps 
 
 === Review the deployment manifests
 
-Take a look at the manifests first. These define the build and deployment environments, using an Infrastructure as Code (IaC) approach.
+Take a look at the manifests first. These define the build and deployment environments, using an link:https://www.redhat.com/en/topics/automation/what-is-infrastructure-as-code-iac[Infrastructure as Code (IaC)^] approach.
 
 . Click the *parasol-insurance-manifests* repository. A directory listing is shown.
 
@@ -188,7 +210,11 @@ The manifests are deployed to your namespaces on OpenShift using OpenShift GitOp
 
 === Review the application source code
 
-. Click the GitLab icon in the top-left of the GitLab UI to return to your *Projects* list.
+The application used in this lab is using the link:https://quarkus.io/[Quarkus^] framework for Java. 
+
+NOTE: Don't worry if you're not familiar with Quarkus or Java; the lab uses them as they're popular in enterprise environments. Alternative runtimes such as Go, Node.js .NET, and more can be deployed. OpenShift is runtime agnostic.
+
+. Click the GitLab icon in the top-left of the GitLab UI, or the refresh (*&#x27F3;*) icon on the GitLab tab, to return to your *Projects* list.
 
 . Click into the *parasol-insurance* repository and explore the project structure. This is a standard Quarkus application with `src/main/java` for source code and `src/main/resources` for configuration.
 
@@ -228,14 +254,24 @@ Do not click the *Log in via OpenShift* button.
 
 . Enter your username and password to login:
 +
-* *Username:* `{user}`
-* *Password:* `{password}`
+--
+*Username:*
+[source,text,role=execute,subs=attributes+]
+----
+{user}
+----
+*Password:*
+[source,text,role=execute,subs=attributes+]
+----
+{password}
+----
+--
 
 . You should see 3 Application tiles displayed. These represent your build, development, and production environments.
 +
 image::m1/argocd-apps.png[User Argo CD Applications,link=self,window=blank,width=700,title="Your three Argo CD Applications"]
 
-These applications were created for you when your lab environment was provisioned. Each one corresponds to one of your three namespaces.
+These applications were created for you when your lab environment was provisioned. Each one corresponds to one of your three namespaces. Behind the scenes these are represented using link:https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/#applications[Argo CD's Application CR^] that points to your manifest repository.
 
 === Update a manifest in GitLab
 
@@ -243,7 +279,7 @@ Let's see GitOps in action by making a small change to a manifest and watching A
 
 . Return to your parasol-insurance-manifests repository in GitLab.
 
-. Open the `app/templates/deployment.yaml` and select *Edit > Edit single file*.
+. Open the `app/templates/deployment.yaml` and click the blue *Edit > Edit single file* button.
 
 . In the `metadata.labels` section, add the following label:
 +
@@ -269,7 +305,7 @@ image::m1/gitlab-update-manifest.png[GitLab Deployment Manifest Update,link=self
 
 . Return to the `{user}-dev` Application in Argo CD, and click *Refresh*.
 +
-[NOTE]
+[TIP]
 ====
 Clicking *Refresh* is not strictly required. Argo CD polls for changes every 3 minutes by default, and webhooks can be used to eliminate polling entirely.
 ====

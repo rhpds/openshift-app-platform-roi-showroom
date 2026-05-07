@@ -130,8 +130,18 @@ The pipeline built a new container image and pushed it to the Quay registry. Let
 
 . Log in with your credentials:
 +
-* *Username:* `{user}`
-* *Password:* `{password}`
+--
+*Username:*
+[source,text,role=execute,subs=attributes+]
+----
+{user}
+----
+*Password:*
+[source,text,role=execute,subs=attributes+]
+----
+{password}
+----
+--
 
 . You should see the `parasol-insurance` repository.
 +
@@ -233,6 +243,8 @@ image::m3/openshift-prod-pods.png[Newly created Parasol Insurance application Po
 . Once the rollout completes, click *Networking > Routes* from the left menu
 
 . Click the URL in the *Location* column to view the production Parasol Insurance application
++
+TIP: If the *Location* column is not visible, expand the window width or click the Route name and the URL will be shown on the next page.
 
 . Navigate to the *Inbox* page and confirm the LLM classification is working. Every email should be classified with a category and reason, with no *REVIEW REQUIRED* entries.
 
