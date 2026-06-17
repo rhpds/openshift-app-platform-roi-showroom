@@ -18,7 +18,7 @@ tabs:
     url: 'https://openshift-gitops-server-openshift-gitops.${DOMAIN}'
 
   - name: SonarQube
-    url: 'https://sonarqube-sonarqube.${DOMAIN}/dashboard?id=parasol-insurance-user-${GUID}'
+    url: 'https://sonarqube-sonarqube.${DOMAIN}/dashboard?id=parasol-insurance-${USER}'
 
   - name: GitLab
     url: 'https://gitlab-gitlab.${DOMAIN}/'
